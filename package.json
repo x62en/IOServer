@@ -1,5 +1,5 @@
 {
-  "name": "IOServer",
+  "name": "ioserver",
   "version": "0.1.0",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class",
   "main": "ioserver.js",
