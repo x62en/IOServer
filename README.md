@@ -6,7 +6,7 @@ This will pawn a server on port specified (default: 8080) and will register all 
 
 Install through npm
   ```bash
-    npm install encoding
+    npm install ioserver
   ```
   
 ## Usage
