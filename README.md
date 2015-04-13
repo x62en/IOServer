@@ -1,6 +1,13 @@
 # IOServer
-Setup a damn simple Socket.io server using coffeescript
-This will pawn a server on port specified (default: 8080) and will register all method of class set as service, except the one starting by '_' (underscore)
+
+Setup a damn simple Socket.io server using coffeescript.
+
+This will launch a server on port specified (default: 8080) and will register all method of the class set as service, except ones starting by '_' (underscore).
+These registrated methods will then be accessible as standard socket.io event:
+```coffeescript
+  socket.emit 'method_name', data
+```
+
 
 ## Install
 
