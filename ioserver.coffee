@@ -21,11 +21,11 @@ HOST 	= 'localhost'
 
 module.exports = class IOServer
 	# Define the variables used by the server
-	constructor: ({host, port, login}={}) ->
+	constructor: ({host, port, login, verbose}={}) ->
 		@host = if host? then host else HOST
 		@port = if port? then port else PORT
 		@login = if login? then login else null
-		
+
 		@service_list = {}
 		@method_list = {}
 
