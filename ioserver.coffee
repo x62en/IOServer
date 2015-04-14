@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-_		= require 'lodash'
 Server	= require('socket.io')
 
 PORT 	= 8080
@@ -22,11 +21,11 @@ HOST 	= 'localhost'
 
 module.exports = class IOServer
 	# Define the variables used by the server
-	constructor: ({host, port, login}={}) ->
+	constructor: ({host, port, login, verbose}={}) ->
 		@host = if host? then host else HOST
 		@port = if port? then port else PORT
 		@login = if login? then login else null
-		
+
 		@service_list = {}
 		@method_list = {}
 
@@ -37,7 +36,8 @@ module.exports = class IOServer
 			@service_list[name] = new service()
 
 			# list methods of object... it will be the list of io actions
-			@method_list[name] = _.functions(@service_list[name])
+			self.dumpMethods(name)
+			# @method_list[name] = self.dumpMethods(@service_list[name])
 		else
 			console.error "#[!] Service name MUST be longer than 2 characters"
 
@@ -95,6 +95,19 @@ module.exports = class IOServer
 						# avoid undefined
 						if socket?
 							socket.emit method, data
+
+	# Thanks to Kri-ban
+	# http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
+	# ___ ;)
+	_dumpMethods: (name) ->
+		@method_list[name] = []
+		s = @method_list[name].prototype
+		while k
+			names = Object.getOwnPropertyNames(k)
+			@method_list[name] = @method_list[name].concat(names)
+			k = Object.getPrototypeOf(k)
+			break if not Object.getPrototypeOf(k) # avoid Object properties
+		@method_list[name].unique().sort()
 
 
 	_findClientsSocket: ({service, room, cb}={}) ->
