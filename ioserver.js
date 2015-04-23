@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.2                        */
+/*         IOServer - v0.1.4                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -153,7 +153,23 @@
           break;
         }
       }
-      return this.method_list[name].unique().sort();
+      return this.method_list[name] = this._unique(this.method_list[name]).sort();
+    };
+
+    IOServer.prototype._unique = function(arr) {
+      var hash, i, l, result;
+      hash = {};
+      result = [];
+      i = 0;
+      l = arr.length;
+      while (i < l) {
+        if (!hash.hasOwnProperty(arr[i])) {
+          hash[arr[i]] = true;
+          result.push(arr[i]);
+        }
+        ++i;
+      }
+      return result;
     };
 
     IOServer.prototype._findClientsSocket = function(_arg) {
