@@ -38,16 +38,26 @@ module.exports = class IOServer
 			@service_list[name] = new service()
 
 			# list methods of object... it will be the list of io actions
-			@_dumpMethods(name)
+			@method_list[name] = @_dumpMethods service
 		else
 			console.error "#[!] Service name MUST be longer than 2 characters"
 
 	# Launch socket IO and get ready to handle events on connection
 	start: () ->
-		date = @_now()
 		if @verbose
-			console.log "###################### #{date} #############################"
+			d = new Date()
+			day = d.getDate()
+			month = d.getMonth()
+			year = d.getFullYear()
+			hours = d.getHours()
+			minutes = d.getMinutes()
+			seconds = d.getSeconds()
+			hours = if hours < 10 then "0#{hours}" else "#{hours}"
+			minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
+			seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
+			console.log "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
 			console.log "#[+] Starting server on port: #{@port} ..."
+
 		@io = Server.listen(@port)
 		
 		ns = {}
@@ -106,18 +116,19 @@ module.exports = class IOServer
 						if socket?
 							socket.emit method, data
 
-	# Thanks to Kri-ban
+	# Based on Kri-ban solution
 	# http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
-	# ___ ;)
-	_dumpMethods: (name) ->
-		@method_list[name] = []
-		s = @method_list[name].prototype
+	# Thanks ___ ;)
+	_dumpMethods: (klass) ->
+		result = []
+		k = klass.prototype
 		while k
 			names = Object.getOwnPropertyNames(k)
-			@method_list[name] = @method_list[name].concat(names)
+			result = result.concat(names)
 			k = Object.getPrototypeOf(k)
 			break if not Object.getPrototypeOf(k) # avoid listing Object properties
-		@method_list[name] = @_unique(@method_list[name]).sort()
+
+		return @_unique(result).sort()
 
 	_unique: (arr) ->
 		hash = {}
@@ -132,7 +143,7 @@ module.exports = class IOServer
 			++i
 
 		return result
-		
+
 	_findClientsSocket: ({service, room, cb}={}) ->
 		res = []
 		ns = @io.of(service ||"/")
@@ -146,18 +157,4 @@ module.exports = class IOServer
 				else
 					res.push ns.connected[id]
 		cb res
-
-
-	_now: () ->
-		d = new Date()
-		day = d.getDate()
-		month = d.getMonth()
-		year = d.getFullYear()
-		hours = d.getHours()
-		minutes = d.getMinutes()
-		seconds = d.getSeconds()
-		hours = if hours < 10 then "0#{hours}" else "#{hours}"
-		minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
-		seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
-		return "#{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds}"
 

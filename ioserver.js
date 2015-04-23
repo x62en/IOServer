@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.4                        */
+/*         IOServer - v0.1.5                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -37,17 +37,26 @@
       _ref = _arg != null ? _arg : {}, name = _ref.name, service = _ref.service;
       if ((name != null) && name.length > 2) {
         this.service_list[name] = new service();
-        return this._dumpMethods(name);
+        return this.method_list[name] = this._dumpMethods(service);
       } else {
         return console.error("#[!] Service name MUST be longer than 2 characters");
       }
     };
 
     IOServer.prototype.start = function() {
-      var date, ns, service, service_name, _ref;
-      date = this._now();
+      var d, day, hours, minutes, month, ns, seconds, service, service_name, year, _ref;
       if (this.verbose) {
-        console.log("###################### " + date + " #############################");
+        d = new Date();
+        day = d.getDate();
+        month = d.getMonth();
+        year = d.getFullYear();
+        hours = d.getHours();
+        minutes = d.getMinutes();
+        seconds = d.getSeconds();
+        hours = hours < 10 ? "0" + hours : "" + hours;
+        minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
+        seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
+        console.log("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
         console.log("#[+] Starting server on port: " + this.port + " ...");
       }
       this.io = Server.listen(this.port);
@@ -141,19 +150,19 @@
       });
     };
 
-    IOServer.prototype._dumpMethods = function(name) {
-      var k, names, s;
-      this.method_list[name] = [];
-      s = this.method_list[name].prototype;
+    IOServer.prototype._dumpMethods = function(klass) {
+      var k, names, result;
+      result = [];
+      k = klass.prototype;
       while (k) {
         names = Object.getOwnPropertyNames(k);
-        this.method_list[name] = this.method_list[name].concat(names);
+        result = result.concat(names);
         k = Object.getPrototypeOf(k);
         if (!Object.getPrototypeOf(k)) {
           break;
         }
       }
-      return this.method_list[name] = this._unique(this.method_list[name]).sort();
+      return this._unique(result).sort();
     };
 
     IOServer.prototype._unique = function(arr) {
@@ -192,21 +201,6 @@
         }
       }
       return cb(res);
-    };
-
-    IOServer.prototype._now = function() {
-      var d, day, hours, minutes, month, seconds, year;
-      d = new Date();
-      day = d.getDate();
-      month = d.getMonth();
-      year = d.getFullYear();
-      hours = d.getHours();
-      minutes = d.getMinutes();
-      seconds = d.getSeconds();
-      hours = hours < 10 ? "0" + hours : "" + hours;
-      minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
-      seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-      return "" + day + "/" + month + "/" + year + " - " + hours + minutes + seconds;
     };
 
     return IOServer;
