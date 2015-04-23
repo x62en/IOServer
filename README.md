@@ -1,9 +1,8 @@
 # IOServer
 
-[![AppVeyor](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg)]()
 [![NPM](https://nodei.co/npm/ioserver.png?compact=true)](https://nodei.co/npm/ioserver/)
 
-Damn simple way to setup your [Socket.io](http://socket.io/docs/server-api/) server using coffeescript.
+Damn simple way to setup your [Socket.io](http://socket.io) server using coffeescript.
 
 This will launch a server on port specified (default: 8080) and will register all method of the class set as service, except ones starting by '_' (underscore).
 These registrated methods will then be accessible as standard client-side socket.io event:
