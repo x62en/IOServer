@@ -18,6 +18,7 @@ Server	= require('socket.io')
 
 PORT 	= 8080
 HOST 	= 'localhost'
+		
 
 module.exports = class IOServer
 	# Define the variables used by the server
@@ -25,6 +26,7 @@ module.exports = class IOServer
 		@host = if host? then host else HOST
 		@port = if port? then port else PORT
 		@login = if login? then login else null
+		@verbose = if verbose? then verbose else false
 
 		@service_list = {}
 		@method_list = {}
@@ -36,16 +38,16 @@ module.exports = class IOServer
 			@service_list[name] = new service()
 
 			# list methods of object... it will be the list of io actions
-			self.dumpMethods(name)
-			# @method_list[name] = self.dumpMethods(@service_list[name])
+			@_dumpMethods(name)
 		else
 			console.error "#[!] Service name MUST be longer than 2 characters"
 
 	# Launch socket IO and get ready to handle events on connection
 	start: () ->
 		date = @_now()
-		console.log "###################### #{date} #############################"
-		console.log "#[+] Starting server on port: #{@port} ..."
+		if @verbose
+			console.log "###################### #{date} #############################"
+			console.log "#[+] Starting server on port: #{@port} ..."
 		@io = Server.listen(@port)
 		
 		ns = {}
@@ -57,7 +59,8 @@ module.exports = class IOServer
 			else
 				ns[service_name] = @io.of "/#{service_name}"
 			
-			console.log "#[+] service #{service_name} registered..."
+			if @verbose
+				console.log "#[+] service #{service_name} registered..."
 			# get ready for connection
 			ns[service_name].on 'connection', @handleEvents(ns[service_name], service_name)
 
@@ -68,11 +71,17 @@ module.exports = class IOServer
 	# Once a client is connected, get ready to handle his events
 	handleEvents: (ns, service_name) ->
 		(socket) =>
-			console.log "#[+] received connection for service #{service_name}"
+			if @verbose
+				console.log "#[+] received connection for service #{service_name}"
 			for index, action of @method_list[service_name]
 				# does not listen for private methods
 				if action.substring(0,1) is '_'
 					continue
+				# do not listen for constructor method
+				if action is 'constructor'
+					continue
+				if @verbose
+					console.log "#[+] method #{action} of #{service_name} listening..."
 				socket.on action, @handleCallback
 									service: service_name
 									method: action
@@ -82,7 +91,8 @@ module.exports = class IOServer
 	# On a specific event call the appropriate method of object
 	handleCallback: ({service, method, socket, namespace}={}) ->
 		(data) =>
-			console.log "#[+] call method #{method} of service #{service}"
+			if @verbose
+				console.log "#[+] call method #{method} of service #{service}"
 			@service_list[service][method] data, socket
 
 	interact: ({service, room, method, data}={}) ->
@@ -106,7 +116,7 @@ module.exports = class IOServer
 			names = Object.getOwnPropertyNames(k)
 			@method_list[name] = @method_list[name].concat(names)
 			k = Object.getPrototypeOf(k)
-			break if not Object.getPrototypeOf(k) # avoid Object properties
+			break if not Object.getPrototypeOf(k) # avoid listing Object properties
 		@method_list[name].unique().sort()
 
 
@@ -120,8 +130,6 @@ module.exports = class IOServer
 					index = ns.connected[id].rooms.indexOf(room)
 					unless index is -1
 						res.push ns.connected[id]
-					else
-						console.log JSON.stringify ns.connected[id].rooms
 				else
 					res.push ns.connected[id]
 		cb res
