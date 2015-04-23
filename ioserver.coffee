@@ -117,9 +117,22 @@ module.exports = class IOServer
 			@method_list[name] = @method_list[name].concat(names)
 			k = Object.getPrototypeOf(k)
 			break if not Object.getPrototypeOf(k) # avoid listing Object properties
-		@method_list[name].unique().sort()
+		@method_list[name] = @_unique(@method_list[name]).sort()
 
+	_unique: (arr) ->
+		hash = {}
+		result = []
 
+		i = 0
+		l = arr.length
+		while i < l
+			unless hash.hasOwnProperty(arr[i])
+				hash[arr[i]] = true
+				result.push arr[i]
+			++i
+
+		return result
+		
 	_findClientsSocket: ({service, room, cb}={}) ->
 		res = []
 		ns = @io.of(service ||"/")
