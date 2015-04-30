@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.5                        */
+/*         IOServer - v0.1.6                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -57,7 +57,7 @@
         minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
         seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
         console.log("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
-        console.log("#[+] Starting server on port: " + this.port + " ...");
+        console.log("#[*] Starting server on port: " + this.port + " ...");
       }
       this.io = Server.listen(this.port);
       ns = {};
@@ -70,7 +70,7 @@
           ns[service_name] = this.io.of("/" + service_name);
         }
         if (this.verbose) {
-          console.log("#[+] service " + service_name + " registered...");
+          console.log("#[*] service " + service_name + " registered...");
         }
         ns[service_name].on('connection', this.handleEvents(ns[service_name], service_name));
       }
@@ -84,7 +84,7 @@
         return function(socket) {
           var action, index, _ref, _results;
           if (_this.verbose) {
-            console.log("#[+] received connection for service " + service_name);
+            console.log("#[*] received connection for service " + service_name);
           }
           _ref = _this.method_list[service_name];
           _results = [];
@@ -97,7 +97,7 @@
               continue;
             }
             if (_this.verbose) {
-              console.log("#[+] method " + action + " of " + service_name + " listening...");
+              console.log("#[*] method " + action + " of " + service_name + " listening...");
             }
             _results.push(socket.on(action, _this.handleCallback({
               service: service_name,
@@ -117,7 +117,7 @@
       return (function(_this) {
         return function(data) {
           if (_this.verbose) {
-            console.log("#[+] call method " + method + " of service " + service);
+            console.log("#[*] call method " + method + " of service " + service);
           }
           return _this.service_list[service][method](data, socket);
         };

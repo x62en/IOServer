@@ -56,7 +56,7 @@ module.exports = class IOServer
 			minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
 			seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
 			console.log "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
-			console.log "#[+] Starting server on port: #{@port} ..."
+			console.log "#[*] Starting server on port: #{@port} ..."
 
 		@io = Server.listen(@port)
 		
@@ -70,7 +70,7 @@ module.exports = class IOServer
 				ns[service_name] = @io.of "/#{service_name}"
 			
 			if @verbose
-				console.log "#[+] service #{service_name} registered..."
+				console.log "#[*] service #{service_name} registered..."
 			# get ready for connection
 			ns[service_name].on 'connection', @handleEvents(ns[service_name], service_name)
 
@@ -82,7 +82,7 @@ module.exports = class IOServer
 	handleEvents: (ns, service_name) ->
 		(socket) =>
 			if @verbose
-				console.log "#[+] received connection for service #{service_name}"
+				console.log "#[*] received connection for service #{service_name}"
 			for index, action of @method_list[service_name]
 				# does not listen for private methods
 				if action.substring(0,1) is '_'
@@ -91,7 +91,7 @@ module.exports = class IOServer
 				if action is 'constructor'
 					continue
 				if @verbose
-					console.log "#[+] method #{action} of #{service_name} listening..."
+					console.log "#[*] method #{action} of #{service_name} listening..."
 				socket.on action, @handleCallback
 									service: service_name
 									method: action
@@ -102,7 +102,7 @@ module.exports = class IOServer
 	handleCallback: ({service, method, socket, namespace}={}) ->
 		(data) =>
 			if @verbose
-				console.log "#[+] call method #{method} of service #{service}"
+				console.log "#[*] call method #{method} of service #{service}"
 			@service_list[service][method] data, socket
 
 	interact: ({service, room, method, data}={}) ->
