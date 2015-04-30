@@ -1,6 +1,6 @@
 {
   "name": "ioserver",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class",
   "main": "ioserver.js",
   "dependencies": {
