@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.6                        */
+/*         IOServer - v0.1.7                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -12,7 +12,8 @@
 /****************************************************/
 
 (function() {
-  var HOST, IOServer, PORT, Server;
+  var HOST, IOServer, PORT, Server,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   Server = require('socket.io');
 
@@ -22,8 +23,8 @@
 
   module.exports = IOServer = (function() {
     function IOServer(_arg) {
-      var host, login, port, verbose, _ref;
-      _ref = _arg != null ? _arg : {}, host = _ref.host, port = _ref.port, login = _ref.login, verbose = _ref.verbose;
+      var host, login, port, verbose;
+      host = _arg.host, port = _arg.port, login = _arg.login, verbose = _arg.verbose;
       this.host = host != null ? host : HOST;
       this.port = port != null ? port : PORT;
       this.login = login != null ? login : null;
@@ -33,13 +34,13 @@
     }
 
     IOServer.prototype.addService = function(_arg) {
-      var name, service, _ref;
-      _ref = _arg != null ? _arg : {}, name = _ref.name, service = _ref.service;
-      if ((name != null) && name.length > 2) {
+      var name, service;
+      name = _arg.name, service = _arg.service;
+      if ((name != null) && (name.length > 2) && (service != null) && (service.prototype != null)) {
         this.service_list[name] = new service();
         return this.method_list[name] = this._dumpMethods(service);
       } else {
-        return console.error("#[!] Service name MUST be longer than 2 characters");
+        return this._logify("#[!] Service name MUST be longer than 2 characters");
       }
     };
 
@@ -56,8 +57,8 @@
         hours = hours < 10 ? "0" + hours : "" + hours;
         minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
         seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-        console.log("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
-        console.log("#[*] Starting server on port: " + this.port + " ...");
+        this._logify("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
+        this._logify("#[*] Starting server on port: " + this.port + " ...");
       }
       this.io = Server.listen(this.port);
       ns = {};
@@ -69,59 +70,12 @@
         } else {
           ns[service_name] = this.io.of("/" + service_name);
         }
-        if (this.verbose) {
-          console.log("#[*] service " + service_name + " registered...");
-        }
-        ns[service_name].on('connection', this.handleEvents(ns[service_name], service_name));
+        this._logify("#[*] service " + service_name + " registered...");
+        ns[service_name].on('connection', this._handleEvents(ns[service_name], service_name));
       }
       if ((this.channel_list != null) && this.channel_list.length > 0) {
-        return io.sockets.on('connection', this.handleEvents(io.sockets, 'global'));
+        return io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
       }
-    };
-
-    IOServer.prototype.handleEvents = function(ns, service_name) {
-      return (function(_this) {
-        return function(socket) {
-          var action, index, _ref, _results;
-          if (_this.verbose) {
-            console.log("#[*] received connection for service " + service_name);
-          }
-          _ref = _this.method_list[service_name];
-          _results = [];
-          for (index in _ref) {
-            action = _ref[index];
-            if (action.substring(0, 1) === '_') {
-              continue;
-            }
-            if (action === 'constructor') {
-              continue;
-            }
-            if (_this.verbose) {
-              console.log("#[*] method " + action + " of " + service_name + " listening...");
-            }
-            _results.push(socket.on(action, _this.handleCallback({
-              service: service_name,
-              method: action,
-              socket: socket,
-              namespace: ns
-            })));
-          }
-          return _results;
-        };
-      })(this);
-    };
-
-    IOServer.prototype.handleCallback = function(_arg) {
-      var method, namespace, service, socket, _ref;
-      _ref = _arg != null ? _arg : {}, service = _ref.service, method = _ref.method, socket = _ref.socket, namespace = _ref.namespace;
-      return (function(_this) {
-        return function(data) {
-          if (_this.verbose) {
-            console.log("#[*] call method " + method + " of service " + service);
-          }
-          return _this.service_list[service][method](data, socket);
-        };
-      })(this);
     };
 
     IOServer.prototype.interact = function(_arg) {
@@ -148,6 +102,45 @@
           };
         })(this)
       });
+    };
+
+    IOServer.prototype._handleEvents = function(ns, service_name) {
+      return (function(_this) {
+        return function(socket) {
+          var action, index, _ref, _results;
+          _this._logify("#[*] received connection for service " + service_name);
+          _ref = _this.method_list[service_name];
+          _results = [];
+          for (index in _ref) {
+            action = _ref[index];
+            if (action.substring(0, 1) === '_') {
+              continue;
+            }
+            if (action === 'constructor') {
+              continue;
+            }
+            _this._logify("#[*] method " + action + " of " + service_name + " listening...");
+            _results.push(socket.on(action, _this._handleCallback({
+              service: service_name,
+              method: action,
+              socket: socket,
+              namespace: ns
+            })));
+          }
+          return _results;
+        };
+      })(this);
+    };
+
+    IOServer.prototype._handleCallback = function(_arg) {
+      var method, namespace, service, socket;
+      service = _arg.service, method = _arg.method, socket = _arg.socket, namespace = _arg.namespace;
+      return (function(_this) {
+        return function(data) {
+          _this._logify("#[*] call method " + method + " of service " + service);
+          return _this.service_list[service][method](data, socket);
+        };
+      })(this);
     };
 
     IOServer.prototype._dumpMethods = function(klass) {
@@ -182,25 +175,27 @@
     };
 
     IOServer.prototype._findClientsSocket = function(_arg) {
-      var cb, i, id, index, ns, res, room, service, _ref, _ref1;
+      var cb, i, id, ns, res, room, service, _ref, _ref1;
       _ref = _arg != null ? _arg : {}, service = _ref.service, room = _ref.room, cb = _ref.cb;
       res = [];
       ns = this.io.of(service || "/");
-      if (ns) {
+      if ((ns != null) && (ns.connected != null)) {
         _ref1 = ns.connected;
         for (id in _ref1) {
           i = _ref1[id];
-          if ((room != null) && room.length > 0) {
-            index = ns.connected[id].rooms.indexOf(room);
-            if (index !== -1) {
-              res.push(ns.connected[id]);
-            }
-          } else {
+          if (__indexOf.call(Object.keys(ns.connected[id].rooms), room) >= 0) {
+            this._logify("send notif " + service + " to " + id + " in " + room);
             res.push(ns.connected[id]);
           }
         }
       }
       return cb(res);
+    };
+
+    IOServer.prototype._logify = function(text) {
+      if (this.verbose) {
+        return console.log("" + text);
+      }
     };
 
     return IOServer;
