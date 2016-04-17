@@ -52,15 +52,14 @@ You can also interact directly with a method in specific namespace using:
 Common options are:
   ```coffeescript
     app = require 'ioserver'
-      port: 8443       # change listening port
+      port: 8443          # change listening port
+      host: 192.168.1.10  # change listening host
+      verbose: 'INFOS'    # set verbosity level
+      secure: true        # enable SSL listening
 
-      # One day... socket.io
-      # will allow us to specify a host, but for now...
-      # host: 192.168.1.10
-      
+
       # TODO: 
-      #login: 'test'    # set login in all query based on socketID?
-      #verbose: INFOS   # set verbosity level
+      #login: 'test'      # set login in all query based on socketID?
 
   ```
 You can interact in a particular room of a service
@@ -72,7 +71,48 @@ You can interact in a particular room of a service
       data: data
   ```
 
+## Example
+
+1. Write a simple class (singleChat.coffee)
+  ```coffeescript
+    module.exports = class SingleChat
+      constructor: () ->
+      replay: (text, socket) ->
+        console.log "Someone say: #{text}."
+        socket.broadcast 'message', text
+
+      _notAccessible: (socket) ->
+        console.error "You should not be here !!"
+  ```
+
+2. Start server-side ioserver process (server.coffee)
+  ```coffeescript
+    server = require 'ioserver'
+    ChatService = require './singleChat'
+
+    server.addService
+      service: 'chat'
+      method: ChatService
+
+    server.start()
+  ```
+
+
+3. Write simple client wich interact with server class method as socket.io events
+  ```coffeescript
+    $  = require 'jquery'
+    io = require 'socket.io-client'
+    NODE_SERVER = 'Your-server-ip'
+    NODE_PORT   = 'Your-server-port' # Default 8080
+
+    socket = io.connect "http://#{NODE_SERVER}:#{NODE_PORT}/chat"
+    $('button.send').on 'click', ->
+      msg = $('input[name="message"]').val()
+      socket.emit 'replay', msg
+
+    socket.on 'message', msg, ->
+      $('.message_list').appendHtml "<div class='message'>#{msg}</div>"
+
 ## TODO
 
-### 1. implement log
-### 2. set user identification
+### 1. set user identification (?)
