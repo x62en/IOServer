@@ -56,7 +56,9 @@ Common options are:
       host: 192.168.1.10  # change listening host
       verbose: 'INFOS'    # set verbosity level
       secure: true        # enable SSL listening
-
+      ssl_ca: '/path/to/ca/certificates'
+      ssl_key: '/path/to/server/key'
+      ssl_cert: '/path/to/server/certificate'
 
       # TODO: 
       #login: 'test'      # set login in all query based on socketID?
