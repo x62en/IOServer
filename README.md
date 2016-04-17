@@ -101,8 +101,13 @@ You can interact in a particular room of a service
     server.start()
   ```
 
+3. Compile and run server
+  ```bash
+    coffee -c *.coffee
+    node server.js
+  ```
 
-3. Write simple client wich interact with server class method as socket.io events
+4. Write simple client wich interact with server class method as socket.io events
   ```coffeescript
     $           = require 'jquery'
     io          = require 'socket.io-client'
