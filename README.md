@@ -112,6 +112,7 @@ You can interact in a particular room of a service
 
     socket.on 'message', msg, ->
       $('.message_list').appendHtml "<div class='message'>#{msg}</div>"
+  ```
 
 ## TODO
 
