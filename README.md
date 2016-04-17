@@ -29,8 +29,8 @@ Require the module:
 Add services using:
   ```coffeescript
     app.addService
-      name: 'service_name'
-      service: Service_Class
+      name:      'service_name'
+      service:   Service_Class
   ```
 
 Start the server...
@@ -44,24 +44,24 @@ Start the server...
 You can also interact directly with a method in specific namespace using:
   ```coffeescript
     app.interact
-      service: 'service_name'
-      method: 'method_name'
-      data: data
+      service:  'service_name'
+      method:   'method_name'
+      data:     data
   ```
 
 Common options are:
   ```coffeescript
     app = require 'ioserver'
-      port: 8443          # change listening port
-      host: 192.168.1.10  # change listening host
-      verbose: 'INFOS'    # set verbosity level
-      secure: true        # enable SSL listening
-      ssl_ca: '/path/to/ca/certificates'
-      ssl_key: '/path/to/server/key'
+      port:     8443                         # change listening port
+      host:     192.168.1.10                 # change listening host
+      verbose:  'INFOS'                      # set verbosity level
+      secure:   true                         # enable SSL listening
+      ssl_ca:   '/path/to/ca/certificates'
+      ssl_key:  '/path/to/server/key'
       ssl_cert: '/path/to/server/certificate'
 
       # TODO: 
-      #login: 'test'      # set login in all query based on socketID?
+      #login: 'test'                          # set login in all query based on socketID?
 
   ```
 You can interact in a particular room of a service
@@ -70,7 +70,7 @@ You can interact in a particular room of a service
       service:  'service_name'
       room:     'room_name'
       method:   'method_name'
-      data: data
+      data:     data
   ```
 
 ## Example
@@ -78,7 +78,9 @@ You can interact in a particular room of a service
 1. Write a simple class (singleChat.coffee)
   ```coffeescript
     module.exports = class SingleChat
+      
       constructor: () ->
+      
       replay: (text, socket) ->
         console.log "Someone say: #{text}."
         socket.broadcast 'message', text
@@ -89,12 +91,12 @@ You can interact in a particular room of a service
 
 2. Start server-side ioserver process (server.coffee)
   ```coffeescript
-    server = require 'ioserver'
+    server      = require 'ioserver'
     ChatService = require './singleChat'
 
     server.addService
-      service: 'chat'
-      method: ChatService
+      service:  'chat'
+      method:   ChatService
 
     server.start()
   ```
@@ -102,18 +104,22 @@ You can interact in a particular room of a service
 
 3. Write simple client wich interact with server class method as socket.io events
   ```coffeescript
-    $  = require 'jquery'
-    io = require 'socket.io-client'
+    $           = require 'jquery'
+    io          = require 'socket.io-client'
     NODE_SERVER = 'Your-server-ip'
     NODE_PORT   = 'Your-server-port' # Default 8080
 
     socket = io.connect "http://#{NODE_SERVER}:#{NODE_PORT}/chat"
+    
+    # When server emit action
+    socket.on 'message', msg, ->
+      $('.message_list').appendHtml "<div class='message'>#{msg}</div>"
+
+    # Jquery client action
     $('button.send').on 'click', ->
       msg = $('input[name="message"]').val()
       socket.emit 'replay', msg
 
-    socket.on 'message', msg, ->
-      $('.message_list').appendHtml "<div class='message'>#{msg}</div>"
   ```
 
 ## TODO
