@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.7                        */
+/*         IOServer - v0.1.8                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -7,35 +7,45 @@
 /*                                                  */
 /*   License: Apache v 2.0                          */
 /*   @Author: Ben Mz                                */
-/*   @Email: x62en (at) users.noreply.github.com    */
+/*   @Email: 0x62en (at) gmail.com                  */
 /*                                                  */
 /****************************************************/
 
 (function() {
-  var HOST, IOServer, PORT, Server,
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  var HOST, IOServer, PORT, Server, fs, http, https,
+    indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  fs = require('fs');
 
   Server = require('socket.io');
+
+  http = require('http');
+
+  https = require('https');
 
   PORT = 8080;
 
   HOST = 'localhost';
 
   module.exports = IOServer = (function() {
-    function IOServer(_arg) {
-      var host, login, port, verbose;
-      host = _arg.host, port = _arg.port, login = _arg.login, verbose = _arg.verbose;
-      this.host = host != null ? host : HOST;
-      this.port = port != null ? port : PORT;
-      this.login = login != null ? login : null;
-      this.verbose = verbose != null ? verbose : false;
+    function IOServer(arg) {
+      var host, login, port, secure, ssl_ca, ssl_cert, ssl_key, verbose;
+      host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key;
+      this.host = host ? host : HOST;
+      this.port = port ? port : PORT;
+      this.login = login ? login : null;
+      this.verbose = verbose ? verbose : false;
+      this.secure = secure ? secure : false;
+      this.ssl_ca = ssl_ca ? ssl_ca : null;
+      this.ssl_cert = ssl_cert ? ssl_cert : null;
+      this.ssl_key = ssl_key ? ssl_key : null;
       this.service_list = {};
       this.method_list = {};
     }
 
-    IOServer.prototype.addService = function(_arg) {
+    IOServer.prototype.addService = function(arg) {
       var name, service;
-      name = _arg.name, service = _arg.service;
+      name = arg.name, service = arg.service;
       if ((name != null) && (name.length > 2) && (service != null) && (service.prototype != null)) {
         this.service_list[name] = new service();
         return this.method_list[name] = this._dumpMethods(service);
@@ -44,8 +54,13 @@
       }
     };
 
+    IOServer.prototype._handler = function(req, res) {
+      res.writeHead(200);
+      return res.end("Hi, I'm a socket-io server.");
+    };
+
     IOServer.prototype.start = function() {
-      var d, day, hours, minutes, month, ns, seconds, service, service_name, year, _ref;
+      var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name, year;
       if (this.verbose) {
         d = new Date();
         day = d.getDate();
@@ -60,11 +75,26 @@
         this._logify("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
         this._logify("#[*] Starting server on port: " + this.port + " ...");
       }
-      this.io = Server.listen(this.port);
+      if (this.secure) {
+        app = https.createServer({
+          key: this.ssl_key,
+          cert: this.ssl_cert,
+          ca: this.ssl_ca
+        }, this._handler);
+      } else {
+        app = http.createServer(this._handler);
+      }
+      app.listen(this.port, this.host);
+      this.io = Server.listen(app);
+      this.io.enable('browser client minification');
+      this.io.enable('browser client etag');
+      this.io.enable('browser client gzip');
+      this.io.set('log level', 1);
+      this.io.set('transports', ['websocket', 'htmlfile', 'xhr-polling', 'jsonp-polling']);
       ns = {};
-      _ref = this.service_list;
-      for (service_name in _ref) {
-        service = _ref[service_name];
+      ref = this.service_list;
+      for (service_name in ref) {
+        service = ref[service_name];
         if (this.login != null) {
           ns[service_name] = this.io.of("/" + this.login + "/" + service_name);
         } else {
@@ -78,26 +108,26 @@
       }
     };
 
-    IOServer.prototype.interact = function(_arg) {
-      var data, method, room, service, _ref;
-      _ref = _arg != null ? _arg : {}, service = _ref.service, room = _ref.room, method = _ref.method, data = _ref.data;
+    IOServer.prototype.interact = function(arg) {
+      var data, method, ref, room, service;
+      ref = arg != null ? arg : {}, service = ref.service, room = ref.room, method = ref.method, data = ref.data;
       return this._findClientsSocket({
         room: room,
         service: service,
         cb: (function(_this) {
           return function(connectedSockets) {
-            var i, socket, _results;
+            var i, results, socket;
             if (connectedSockets != null) {
-              _results = [];
+              results = [];
               for (i in connectedSockets) {
                 socket = connectedSockets[i];
                 if (socket != null) {
-                  _results.push(socket.emit(method, data));
+                  results.push(socket.emit(method, data));
                 } else {
-                  _results.push(void 0);
+                  results.push(void 0);
                 }
               }
-              return _results;
+              return results;
             }
           };
         })(this)
@@ -107,12 +137,12 @@
     IOServer.prototype._handleEvents = function(ns, service_name) {
       return (function(_this) {
         return function(socket) {
-          var action, index, _ref, _results;
+          var action, index, ref, results;
           _this._logify("#[*] received connection for service " + service_name);
-          _ref = _this.method_list[service_name];
-          _results = [];
-          for (index in _ref) {
-            action = _ref[index];
+          ref = _this.method_list[service_name];
+          results = [];
+          for (index in ref) {
+            action = ref[index];
             if (action.substring(0, 1) === '_') {
               continue;
             }
@@ -120,21 +150,21 @@
               continue;
             }
             _this._logify("#[*] method " + action + " of " + service_name + " listening...");
-            _results.push(socket.on(action, _this._handleCallback({
+            results.push(socket.on(action, _this._handleCallback({
               service: service_name,
               method: action,
               socket: socket,
               namespace: ns
             })));
           }
-          return _results;
+          return results;
         };
       })(this);
     };
 
-    IOServer.prototype._handleCallback = function(_arg) {
+    IOServer.prototype._handleCallback = function(arg) {
       var method, namespace, service, socket;
-      service = _arg.service, method = _arg.method, socket = _arg.socket, namespace = _arg.namespace;
+      service = arg.service, method = arg.method, socket = arg.socket, namespace = arg.namespace;
       return (function(_this) {
         return function(data) {
           _this._logify("#[*] call method " + method + " of service " + service);
@@ -174,16 +204,16 @@
       return result;
     };
 
-    IOServer.prototype._findClientsSocket = function(_arg) {
-      var cb, i, id, ns, res, room, service, _ref, _ref1;
-      _ref = _arg != null ? _arg : {}, service = _ref.service, room = _ref.room, cb = _ref.cb;
+    IOServer.prototype._findClientsSocket = function(arg) {
+      var cb, i, id, ns, ref, ref1, res, room, service;
+      ref = arg != null ? arg : {}, service = ref.service, room = ref.room, cb = ref.cb;
       res = [];
       ns = this.io.of(service || "/");
       if ((ns != null) && (ns.connected != null)) {
-        _ref1 = ns.connected;
-        for (id in _ref1) {
-          i = _ref1[id];
-          if (__indexOf.call(Object.keys(ns.connected[id].rooms), room) >= 0) {
+        ref1 = ns.connected;
+        for (id in ref1) {
+          i = ref1[id];
+          if (indexOf.call(Object.keys(ns.connected[id].rooms), room) >= 0) {
             this._logify("send notif " + service + " to " + id + " in " + room);
             res.push(ns.connected[id]);
           }
