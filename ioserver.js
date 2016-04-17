@@ -12,7 +12,7 @@
 /****************************************************/
 
 (function() {
-  var HOST, IOServer, PORT, Server, fs, http, https,
+  var HOST, IOServer, LOG_LEVEL, PORT, Server, fs, http, https,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   fs = require('fs');
@@ -27,6 +27,8 @@
 
   HOST = 'localhost';
 
+  LOG_LEVEL = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTIFICATION', 'INFORMATION', 'DEBUG'];
+
   module.exports = IOServer = (function() {
     function IOServer(arg) {
       var host, login, port, secure, ssl_ca, ssl_cert, ssl_key, verbose;
@@ -34,7 +36,7 @@
       this.host = host ? host : HOST;
       this.port = port ? port : PORT;
       this.login = login ? login : null;
-      this.verbose = verbose ? verbose : false;
+      this.verbose = verbose && LOG_LEVEL.indexOf(verbose.toUpperCase()) ? LOG_LEVEL.indexOf(verbose.toUpperCase()) : 3;
       this.secure = secure ? secure : false;
       this.ssl_ca = ssl_ca ? ssl_ca : null;
       this.ssl_cert = ssl_cert ? ssl_cert : null;
@@ -50,7 +52,7 @@
         this.service_list[name] = new service();
         return this.method_list[name] = this._dumpMethods(service);
       } else {
-        return this._logify("#[!] Service name MUST be longer than 2 characters");
+        return this._logify(3, "#[!] Service name MUST be longer than 2 characters");
       }
     };
 
@@ -72,8 +74,8 @@
         hours = hours < 10 ? "0" + hours : "" + hours;
         minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
         seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-        this._logify("################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
-        this._logify("#[*] Starting server on port: " + this.port + " ...");
+        this._logify(0, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
+        this._logify(0, "#[*] Starting server on " + this.host + ":" + this.port + " ...");
       }
       if (this.secure) {
         app = https.createServer({
@@ -100,7 +102,7 @@
         } else {
           ns[service_name] = this.io.of("/" + service_name);
         }
-        this._logify("#[*] service " + service_name + " registered...");
+        this._logify(6, "#[*] service " + service_name + " registered...");
         ns[service_name].on('connection', this._handleEvents(ns[service_name], service_name));
       }
       if ((this.channel_list != null) && this.channel_list.length > 0) {
@@ -138,7 +140,7 @@
       return (function(_this) {
         return function(socket) {
           var action, index, ref, results;
-          _this._logify("#[*] received connection for service " + service_name);
+          _this._logify(5, "#[*] received connection for service " + service_name);
           ref = _this.method_list[service_name];
           results = [];
           for (index in ref) {
@@ -149,7 +151,7 @@
             if (action === 'constructor') {
               continue;
             }
-            _this._logify("#[*] method " + action + " of " + service_name + " listening...");
+            _this._logify(7, "#[*] method " + action + " of " + service_name + " listening...");
             results.push(socket.on(action, _this._handleCallback({
               service: service_name,
               method: action,
@@ -167,7 +169,7 @@
       service = arg.service, method = arg.method, socket = arg.socket, namespace = arg.namespace;
       return (function(_this) {
         return function(data) {
-          _this._logify("#[*] call method " + method + " of service " + service);
+          _this._logify(7, "#[*] call method " + method + " of service " + service);
           return _this.service_list[service][method](data, socket);
         };
       })(this);
@@ -214,7 +216,7 @@
         for (id in ref1) {
           i = ref1[id];
           if (indexOf.call(Object.keys(ns.connected[id].rooms), room) >= 0) {
-            this._logify("send notif " + service + " to " + id + " in " + room);
+            this._logify(7, "send notif " + service + " to " + id + " in " + room);
             res.push(ns.connected[id]);
           }
         }
@@ -222,9 +224,13 @@
       return cb(res);
     };
 
-    IOServer.prototype._logify = function(text) {
-      if (this.verbose) {
-        return console.log("" + text);
+    IOServer.prototype._logify = function(level, text) {
+      if (level <= this.verbose) {
+        if (level <= 4) {
+          return console.error(text);
+        } else {
+          return console.log(text);
+        }
       }
     };
 
