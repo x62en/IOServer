@@ -27,15 +27,15 @@ LOG_LEVEL = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','IN
 module.exports = class IOServer
     # Define the variables used by the server
     constructor: ({host, port, login, verbose, secure, ssl_ca, ssl_cert, ssl_key}) ->
-        @host = if host then host else HOST
-        @port = if port then port else PORT
-        @login = if login then login else null
-        @verbose = if verbose and LOG_LEVEL.indexOf(verbose.toUpperCase()) then LOG_LEVEL.indexOf(verbose.toUpperCase()) else 3
-        @secure = if secure then secure else false
+        @host = if host then String(host) else HOST
+        @port = if port then Number(port) else PORT
+        @login = if login then String(login) else null
+        @verbose = if verbose then String(verbose).toUpperCase() else 'ERROR'
+        @secure = if secure then Boolean(secure) else false
 
-        @ssl_ca = if ssl_ca then ssl_ca else null
-        @ssl_cert = if ssl_cert then ssl_cert else null
-        @ssl_key = if ssl_key then ssl_key else null
+        @ssl_ca = if ssl_ca then String(ssl_ca) else null
+        @ssl_cert = if ssl_cert then String(ssl_cert) else null
+        @ssl_key = if ssl_key then String(ssl_key) else null
 
         @service_list = {}
         @method_list = {}
@@ -53,7 +53,7 @@ module.exports = class IOServer
 
     _handler: (req, res) ->
         res.writeHead 200;
-        res.end "Hi, I'm a socket-io server."
+        res.end "<h1>Hello human ;)</h1>"
 
     # Launch socket IO and get ready to handle events on connection
     start: () ->
@@ -72,25 +72,25 @@ module.exports = class IOServer
             @_logify 0, "#[*] Starting server on #{@host}:#{@port} ..."
 
         if @secure
-            app = https.createServer {key: @ssl_key, cert: @ssl_cert, ca: @ssl_ca}, @_handler
+            app = https.createServer { key: fs.readFileSync(@ssl_key), cert: fs.readFileSync(@ssl_cert), ca: fs.readFileSync(@ssl_ca) }, @_handler
         else
             app = http.createServer @_handler
 
         app.listen @port, @host
         @io = Server.listen(app)
 
-        @io.enable('browser client minification');  # send minified client
-        @io.enable('browser client etag');          # apply etag caching logic based on version number
-        @io.enable('browser client gzip');          # gzip the file
-        @io.set('log level', 1);                    # reduce logging
+        # @io.enable('browser client minification');  # send minified client
+        # @io.enable('browser client etag');          # apply etag caching logic based on version number
+        # @io.enable('browser client gzip');          # gzip the file
+        # @io.set('log level', 1);                    # reduce logging
 
-        # enable all transports
-        @io.set('transports', [
-            'websocket'
-            'htmlfile'
-            'xhr-polling'
-            'jsonp-polling'
-        ])
+        # # enable all transports
+        # @io.set('transports', [
+        #     'websocket'
+        #     'htmlfile'
+        #     'xhr-polling'
+        #     'jsonp-polling'
+        # ])
         
         ns = {}
 
@@ -185,7 +185,8 @@ module.exports = class IOServer
         cb res
 
     _logify: (level, text) ->
-        if level <= @verbose
+        current_level = LOG_LEVEL.indexOf @verbose
+        if level >= current_level
             if level <= 4
                 console.error text
             else
