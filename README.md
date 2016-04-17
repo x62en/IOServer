@@ -118,7 +118,7 @@ You can interact in a particular room of a service
     
     # When server emit action
     socket.on 'message', msg, ->
-      $('.message_list').appendHtml "<div class='message'>#{msg}</div>"
+      $('.message_list').append "<div class='message'>#{msg}</div>"
 
     # Jquery client action
     $('button.send').on 'click', ->
