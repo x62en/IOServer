@@ -26,9 +26,10 @@ LOG_LEVEL = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','IN
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({host, port, login, verbose, secure, ssl_ca, ssl_cert, ssl_key}) ->
+    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key}) ->
         @host = if host then String(host) else HOST
         @port = if port then Number(port) else PORT
+        @share = if share then String(share) else null
         @login = if login then String(login) else null
         @verbose = if verbose then String(verbose).toUpperCase() else 'ERROR'
         @secure = if secure then Boolean(secure) else false
@@ -43,7 +44,7 @@ module.exports = class IOServer
     # Allow to register easily a class to this server
     # this class will be bind to a specific namespace
     addService: ({name, service}) ->
-        if name? and (name.length > 2) and service? and service.prototype?
+        if name and (name.length > 2) and service and service.prototype
             @service_list[name] = new service()
 
             # list methods of object... it will be the list of io actions
@@ -51,10 +52,28 @@ module.exports = class IOServer
         else
             @_logify 3 ,"#[!] Service name MUST be longer than 2 characters"
 
-    _handler: (req, res) ->
-        res.writeHead 200;
-        res.end "<h1>Hello human ;)</h1>"
-
+    # Allow your small server to share some stuff
+    _handler: (req, res) =>
+        if @share
+            files = fs.readdirSync(@share)
+            res.writeHead 200
+            
+            unless files.length > 0
+                res.end 'Shared path empty.'
+            
+            for file in files
+                readStream = fs.createReadStream("#{@share}/#{file}")
+                readStream.on 'open', () ->
+                    readStream.pipe(res)
+                readStream.on 'error', (err) ->
+                    res.writeHead 500
+                    res.end(err)
+                break
+            
+        else
+            res.writeHead 200
+            res.end 'Nothing shared.'
+            
     # Launch socket IO and get ready to handle events on connection
     start: () ->
         if @verbose

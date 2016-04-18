@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.1.8                        */
+/*         IOServer - v0.1.9                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -13,6 +13,7 @@
 
 (function() {
   var HOST, IOServer, LOG_LEVEL, PORT, Server, fs, http, https,
+    bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   fs = require('fs');
@@ -31,10 +32,12 @@
 
   module.exports = IOServer = (function() {
     function IOServer(arg) {
-      var host, login, port, secure, ssl_ca, ssl_cert, ssl_key, verbose;
-      host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key;
+      var host, login, port, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
+      host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, share = arg.share, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key;
+      this._handler = bind(this._handler, this);
       this.host = host ? String(host) : HOST;
       this.port = port ? Number(port) : PORT;
+      this.share = share ? String(share) : null;
       this.login = login ? String(login) : null;
       this.verbose = verbose ? String(verbose).toUpperCase() : 'ERROR';
       this.secure = secure ? Boolean(secure) : false;
@@ -48,7 +51,7 @@
     IOServer.prototype.addService = function(arg) {
       var name, service;
       name = arg.name, service = arg.service;
-      if ((name != null) && (name.length > 2) && (service != null) && (service.prototype != null)) {
+      if (name && (name.length > 2) && service && service.prototype) {
         this.service_list[name] = new service();
         return this.method_list[name] = this._dumpMethods(service);
       } else {
@@ -57,8 +60,31 @@
     };
 
     IOServer.prototype._handler = function(req, res) {
-      res.writeHead(200);
-      return res.end("<h1>Hello human ;)</h1>");
+      var file, files, j, len, readStream, results;
+      if (this.share) {
+        files = fs.readdirSync(this.share);
+        res.writeHead(200);
+        if (!(files.length > 0)) {
+          res.end('Shared path empty.');
+        }
+        results = [];
+        for (j = 0, len = files.length; j < len; j++) {
+          file = files[j];
+          readStream = fs.createReadStream(this.share + "/" + file);
+          readStream.on('open', function() {
+            return readStream.pipe(res);
+          });
+          readStream.on('error', function(err) {
+            res.writeHead(500);
+            return res.end(err);
+          });
+          break;
+        }
+        return results;
+      } else {
+        res.writeHead(200);
+        return res.end('Nothing shared.');
+      }
     };
 
     IOServer.prototype.start = function() {

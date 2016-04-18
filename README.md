@@ -55,6 +55,7 @@ Common options are:
       port:     8443                         # change listening port
       host:     192.168.1.10                 # change listening host
       verbose:  'INFOS'                      # set verbosity level
+      share:    '/path/to/share'             # useful for letsencrypt compatibility
       secure:   true                         # enable SSL listening
       ssl_ca:   '/path/to/ca/certificates'
       ssl_key:  '/path/to/server/key'
