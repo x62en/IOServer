@@ -18,6 +18,11 @@ These registrated methods will then be accessible as standard client-side socket
   socket.emit 'method_name', data
 ```
 
+**Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**
+
+You can also use Fiberized functions inside your methods, but **NOT IN CONSTRUCTORS !**
+
+
 ## Install
 
 Install with npm:
@@ -60,6 +65,9 @@ Common options are:
     app = require 'ioserver'
       port:     8443                         # change listening port
       host:     192.168.1.10                 # change listening host
+      mode:     'websocket'                  # Set socket.io client support transport
+                                             #   default is ['websocket','xhr-polling']
+                                             #   available methods are ['websocket','htmlfile','xhr-polling','jsonp-polling']
       verbose:  'INFOS'                      # set verbosity level
       share:    '/path/to/share'             # useful for letsencrypt compatibility
       secure:   true                         # enable SSL listening
@@ -88,7 +96,7 @@ You can interact in a particular room of a service
       
       constructor: () ->
       
-      replay: (text, socket) ->
+      replay: (socket, text) ->
         console.log "Someone say: #{text}."
         socket.broadcast.emit 'message', text
 
