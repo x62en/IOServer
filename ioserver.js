@@ -1,9 +1,9 @@
 /****************************************************/
-/*         IOServer - v0.1.9                        */
+/*         IOServer - v0.2.0                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
-/*             -    Copyright 2014    -             */
+/*             -    Copyright 2017    -             */
 /*                                                  */
 /*   License: Apache v 2.0                          */
 /*   @Author: Ben Mz                                */
@@ -12,7 +12,7 @@
 /****************************************************/
 
 (function() {
-  var HOST, IOServer, LOG_LEVEL, PORT, Server, fs, http, https,
+  var Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, fs, http, https,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -24,6 +24,8 @@
 
   https = require('https');
 
+  Fiber = require('fibers');
+
   PORT = 8080;
 
   HOST = 'localhost';
@@ -32,27 +34,44 @@
 
   module.exports = IOServer = (function() {
     function IOServer(arg) {
-      var host, login, port, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
-      host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, share = arg.share, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key;
+      var e, error, host, login, mode, port, ref, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
+      host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, share = arg.share, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key, mode = arg.mode;
       this._handler = bind(this._handler, this);
       this.host = host ? String(host) : HOST;
-      this.port = port ? Number(port) : PORT;
+      try {
+        this.port = port ? Number(port) : PORT;
+      } catch (error) {
+        e = error;
+        throw new Error('Invalid port.');
+      }
       this.share = share ? String(share) : null;
       this.login = login ? String(login) : null;
-      this.verbose = verbose ? String(verbose).toUpperCase() : 'ERROR';
+      this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
+      this.mode = mode === 'websocket' || mode === 'htmlfile' || mode === 'xhr-polling' || mode === 'jsonp-polling' ? [mode] : ['websocket', 'xhr-polling'];
       this.secure = secure ? Boolean(secure) : false;
-      this.ssl_ca = ssl_ca ? String(ssl_ca) : null;
-      this.ssl_cert = ssl_cert ? String(ssl_cert) : null;
-      this.ssl_key = ssl_key ? String(ssl_key) : null;
+      if (this.secure) {
+        this.ssl_ca = ssl_ca ? String(ssl_ca) : null;
+        this.ssl_cert = ssl_cert ? String(ssl_cert) : null;
+        this.ssl_key = ssl_key ? String(ssl_key) : null;
+      }
       this.service_list = {};
       this.method_list = {};
     }
 
     IOServer.prototype.addService = function(arg) {
-      var name, service;
+      var e, error, name, service;
       name = arg.name, service = arg.service;
       if (name && (name.length > 2) && service && service.prototype) {
-        this.service_list[name] = new service();
+        try {
+          this.service_list[name] = new service();
+        } catch (error) {
+          e = error;
+          if (("" + e).substring('yield() called with no fiber running') !== -1) {
+            console.error("[!] Error: you are NOT allowed to use fiberized function in constructor...");
+          } else {
+            console.error("[!] Error while instantiate " + name + " -> " + e);
+          }
+        }
         return this.method_list[name] = this._dumpMethods(service);
       } else {
         return this._logify(3, "#[!] Service name MUST be longer than 2 characters");
@@ -114,6 +133,7 @@
       }
       app.listen(this.port, this.host);
       this.io = Server.listen(app);
+      this.io.set('transports', this.mode);
       ns = {};
       ref = this.service_list;
       for (service_name in ref) {
@@ -190,8 +210,10 @@
       service = arg.service, method = arg.method, socket = arg.socket, namespace = arg.namespace;
       return (function(_this) {
         return function(data) {
-          _this._logify(7, "#[*] call method " + method + " of service " + service);
-          return _this.service_list[service][method](data, socket);
+          return Fiber(function() {
+            _this._logify(7, "#[*] call method " + method + " of service " + service);
+            return _this.service_list[service][method](socket, data);
+          }).run();
         };
       })(this);
     };

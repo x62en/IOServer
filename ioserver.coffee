@@ -1,4 +1,4 @@
-# Copyright [2014] 
+# Copyright [2017] 
 # @Email: x62en (at) users (dot) noreply (dot) github (dot) com
 # @Author: Ben Mz
 
@@ -14,29 +14,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-fs = require('fs')
-Server  = require('socket.io')
-http = require('http')
-https = require('https')
+fs     = require 'fs'
+Server = require 'socket.io'
+http   = require 'http'
+https  = require 'https'
+Fiber  = require 'fibers'
 
-PORT    = 8080
-HOST    = 'localhost'
+PORT      = 8080
+HOST      = 'localhost'
 LOG_LEVEL = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
         
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key}) ->
+    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key,mode}) ->
         @host = if host then String(host) else HOST
-        @port = if port then Number(port) else PORT
+        try
+            @port = if port then Number(port) else PORT
+        catch e
+            throw new Error 'Invalid port.'
+        
         @share = if share then String(share) else null
         @login = if login then String(login) else null
-        @verbose = if verbose then String(verbose).toUpperCase() else 'ERROR'
-        @secure = if secure then Boolean(secure) else false
+        @verbose = if String(verbose).toUpperCase() in LOG_LEVEL then String(verbose).toUpperCase() else 'ERROR'
+        @mode = if mode in  [
+            'websocket'
+            'htmlfile'
+            'xhr-polling'
+            'jsonp-polling'
+        ] then [mode] else ['websocket','xhr-polling']
 
-        @ssl_ca = if ssl_ca then String(ssl_ca) else null
-        @ssl_cert = if ssl_cert then String(ssl_cert) else null
-        @ssl_key = if ssl_key then String(ssl_key) else null
+        @secure = if secure then Boolean(secure) else false
+        if @secure
+            @ssl_ca = if ssl_ca then String(ssl_ca) else null
+            @ssl_cert = if ssl_cert then String(ssl_cert) else null
+            @ssl_key = if ssl_key then String(ssl_key) else null
 
         @service_list = {}
         @method_list = {}
@@ -45,7 +57,15 @@ module.exports = class IOServer
     # this class will be bind to a specific namespace
     addService: ({name, service}) ->
         if name and (name.length > 2) and service and service.prototype
-            @service_list[name] = new service()
+            try
+                @service_list[name] = new service()
+            catch e
+                if "#{e}".substring('yield() called with no fiber running') isnt -1
+                    console.error "[!] Error: you are NOT allowed to use fiberized function in constructor..."
+                else
+                    console.error "[!] Error while instantiate #{name} -> #{e}"
+                
+            
 
             # list methods of object... it will be the list of io actions
             @method_list[name] = @_dumpMethods service
@@ -98,18 +118,8 @@ module.exports = class IOServer
         app.listen @port, @host
         @io = Server.listen(app)
 
-        # @io.enable('browser client minification');  # send minified client
-        # @io.enable('browser client etag');          # apply etag caching logic based on version number
-        # @io.enable('browser client gzip');          # gzip the file
-        # @io.set('log level', 1);                    # reduce logging
-
-        # # enable all transports
-        # @io.set('transports', [
-        #     'websocket'
-        #     'htmlfile'
-        #     'xhr-polling'
-        #     'jsonp-polling'
-        # ])
+        # enable transports
+        @io.set('transports',@mode)
         
         ns = {}
 
@@ -161,9 +171,11 @@ module.exports = class IOServer
     # On a specific event call the appropriate method of object
     _handleCallback: ({service, method, socket, namespace}) ->
         (data) =>
-            @_logify 7, "#[*] call method #{method} of service #{service}"
-            @service_list[service][method] data, socket
-
+            Fiber( =>
+                @_logify 7, "#[*] call method #{method} of service #{service}"
+                @service_list[service][method] socket, data
+            ).run()
+            
     # Based on Kri-ban solution
     # http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
     # Thanks ___ ;)
