@@ -1,11 +1,11 @@
 {
   "name": "ioserver",
-  "version": "0.1.9",
-  "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class",
+  "version": "0.2.0",
+  "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...",
   "main": "ioserver.js",
   "dependencies": {
-    "fs": "0.0.2",
-    "socket.io": "^1.3.5"
+    "fibers": "^1.0.15",
+    "socket.io": "^1.7.3"
   },
   "devDependencies": {
     "coffee-script": "^1.9.1"
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/x62en/IOServer.git"
+    "url": "https://github.com/x42en/IOServer.git"
   },
   "keywords": [
     "socket-io",
@@ -25,9 +25,13 @@
     "3l1x1r"
   ],
   "author": "Ben Mz",
-  "license": "Apache v2.0",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/x62en/IOServer/issues"
+    "url": "https://github.com/x42en/IOServer/issues"
   },
-  "homepage": "https://github.com/x62en/IOServer"
+  "homepage": "https://github.com/x42en/IOServer",
+  "optionalDependencies": {
+    "bufferutil": "^3.0.0",
+    "utf-8-validate": "^1.2.2"
+  }
 }
