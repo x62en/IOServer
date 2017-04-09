@@ -1,6 +1,6 @@
 {
   "name": "ioserver",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...",
   "main": "ioserver.js",
   "dependencies": {
@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/x42en/IOServer",
   "optionalDependencies": {
-    "bufferutil": "^3.0.0",
+    "bufferutil": "^1.0.0",
     "utf-8-validate": "^1.2.2"
   }
 }
