@@ -1,5 +1,5 @@
 # Copyright [2017] 
-# @Email: x62en (at) users (dot) noreply (dot) github (dot) com
+# @Email: x42en (at) users (dot) noreply (dot) github (dot) com
 # @Author: Ben Mz
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,14 +20,14 @@ http   = require 'http'
 https  = require 'https'
 Fiber  = require 'fibers'
 
-PORT      = 8080
-HOST      = 'localhost'
-LOG_LEVEL = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
-        
+PORT       = 8080
+HOST       = 'localhost'
+LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
+TRANSPORTS = ['websocket','htmlfile','xhr-polling','jsonp-polling']
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key,mode}) ->
+    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) ->
         @host = if host then String(host) else HOST
         try
             @port = if port then Number(port) else PORT
@@ -37,13 +37,20 @@ module.exports = class IOServer
         @share = if share then String(share) else null
         @login = if login then String(login) else null
         @verbose = if String(verbose).toUpperCase() in LOG_LEVEL then String(verbose).toUpperCase() else 'ERROR'
-        @mode = if mode in  [
-            'websocket'
-            'htmlfile'
-            'xhr-polling'
-            'jsonp-polling'
-        ] then [mode] else ['websocket','xhr-polling']
+        
+        # Process transport mode options
+        @mode = []
+        if mode.constructor is Array
+            for i,m of mode
+                if String(m).toLowerCase() in TRANSPORTS
+                    @mode.push m
 
+        else if String(mode).toLowerCase() in TRANSPORTS
+            @mode.push String(mode).toLowerCase()
+        else
+            @mode.push 'websocket'
+            @mode.push 'xhr-polling'
+        
         @secure = if secure then Boolean(secure) else false
         if @secure
             @ssl_ca = if ssl_ca then String(ssl_ca) else null
@@ -75,7 +82,7 @@ module.exports = class IOServer
     # Allow your small server to share some stuff
     _handler: (req, res) =>
         if @share
-            files = fs.readdirSync(@share)
+            files = fs.readdirSync @share
             res.writeHead 200
             
             unless files.length > 0
@@ -87,7 +94,7 @@ module.exports = class IOServer
                     readStream.pipe(res)
                 readStream.on 'error', (err) ->
                     res.writeHead 500
-                    res.end(err)
+                    res.end err
                 break
             
         else
@@ -96,7 +103,7 @@ module.exports = class IOServer
             
     # Launch socket IO and get ready to handle events on connection
     start: () ->
-        if @verbose
+        if LOG_LEVEL.indexOf(@verbose) < 5
             d = new Date()
             day = d.getDate()
             month = d.getMonth()
@@ -107,8 +114,8 @@ module.exports = class IOServer
             hours = if hours < 10 then "0#{hours}" else "#{hours}"
             minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
             seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
-            @_logify 0, "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
-            @_logify 0, "#[*] Starting server on #{@host}:#{@port} ..."
+            @_logify 5, "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
+            @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
 
         if @secure
             app = https.createServer { key: fs.readFileSync(@ssl_key), cert: fs.readFileSync(@ssl_cert), ca: fs.readFileSync(@ssl_ca) }, @_handler
@@ -119,22 +126,22 @@ module.exports = class IOServer
         @io = Server.listen(app)
 
         # enable transports
-        @io.set('transports',@mode)
+        @io.set 'transports', @mode
         
         ns = {}
 
         # Register each different services by its namespace
         for service_name, service of @service_list
-            if @login?
+            if @login
                 ns[service_name] = @io.of "/#{@login}/#{service_name}"
             else
                 ns[service_name] = @io.of "/#{service_name}"
             
-            @_logify 6, "#[*] service #{service_name} registered..."
+            @_logify 6, "[*] service #{service_name} registered..."
             # get ready for connection
             ns[service_name].on 'connection', @_handleEvents(ns[service_name], service_name)
 
-        if @channel_list? and @channel_list.length > 0
+        if @channel_list and @channel_list.length > 0
             # Register all channels by their room
             io.sockets.on 'connection', @_handleEvents(io.sockets, 'global')
     
@@ -144,16 +151,16 @@ module.exports = class IOServer
             room: room
             service: service
             cb: (connectedSockets) =>
-                if connectedSockets?
+                if connectedSockets
                     for i, socket of connectedSockets
                         # avoid undefined
-                        if socket?
+                        if socket
                             socket.emit method, data
 
     # Once a client is connected, get ready to handle his events
     _handleEvents: (ns, service_name) ->
         (socket) =>
-            @_logify 5, "#[*] received connection for service #{service_name}"
+            @_logify 5, "[*] received connection for service #{service_name}"
             for index, action of @method_list[service_name]
                 # does not listen for private methods
                 if action.substring(0,1) is '_'
@@ -161,7 +168,7 @@ module.exports = class IOServer
                 # do not listen for constructor method
                 if action is 'constructor'
                     continue
-                @_logify 7, "#[*] method #{action} of #{service_name} listening..."
+                @_logify 6, "[*] method #{action} of #{service_name} listening..."
                 socket.on action, @_handleCallback
                                     service: service_name
                                     method: action
@@ -172,7 +179,7 @@ module.exports = class IOServer
     _handleCallback: ({service, method, socket, namespace}) ->
         (data) =>
             Fiber( =>
-                @_logify 7, "#[*] call method #{method} of service #{service}"
+                @_logify 6, "[*] call method #{method} of service #{service}"
                 @service_list[service][method] socket, data
             ).run()
             
@@ -208,7 +215,7 @@ module.exports = class IOServer
         res = []
         ns = @io.of(service ||"/")
 
-        if ns? and ns.connected?
+        if ns and ns.connected
             for id, i of ns.connected
                 if room in Object.keys(ns.connected[id].rooms)
                     @_logify 7, "send notif #{service} to #{id} in #{room}"
@@ -217,7 +224,7 @@ module.exports = class IOServer
 
     _logify: (level, text) ->
         current_level = LOG_LEVEL.indexOf @verbose
-        if level >= current_level
+        if level <= current_level
             if level <= 4
                 console.error text
             else

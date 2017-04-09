@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.2.0                        */
+/*         IOServer - v0.2.1                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -7,12 +7,12 @@
 /*                                                  */
 /*   License: Apache v 2.0                          */
 /*   @Author: Ben Mz                                */
-/*   @Email: 0x62en (at) gmail.com                  */
+/*   @Email: 0x42en (at) gmail.com                  */
 /*                                                  */
 /****************************************************/
 
 (function() {
-  var Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, fs, http, https,
+  var Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, fs, http, https,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -32,9 +32,11 @@
 
   LOG_LEVEL = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTIFICATION', 'INFORMATION', 'DEBUG'];
 
+  TRANSPORTS = ['websocket', 'htmlfile', 'xhr-polling', 'jsonp-polling'];
+
   module.exports = IOServer = (function() {
     function IOServer(arg) {
-      var e, error, host, login, mode, port, ref, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
+      var e, error, host, i, login, m, mode, port, ref, ref1, ref2, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
       host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, share = arg.share, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key, mode = arg.mode;
       this._handler = bind(this._handler, this);
       this.host = host ? String(host) : HOST;
@@ -47,7 +49,20 @@
       this.share = share ? String(share) : null;
       this.login = login ? String(login) : null;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
-      this.mode = mode === 'websocket' || mode === 'htmlfile' || mode === 'xhr-polling' || mode === 'jsonp-polling' ? [mode] : ['websocket', 'xhr-polling'];
+      this.mode = [];
+      if (mode.constructor === Array) {
+        for (i in mode) {
+          m = mode[i];
+          if (ref1 = String(m).toLowerCase(), indexOf.call(TRANSPORTS, ref1) >= 0) {
+            this.mode.push(m);
+          }
+        }
+      } else if (ref2 = String(mode).toLowerCase(), indexOf.call(TRANSPORTS, ref2) >= 0) {
+        this.mode.push(String(mode).toLowerCase());
+      } else {
+        this.mode.push('websocket');
+        this.mode.push('xhr-polling');
+      }
       this.secure = secure ? Boolean(secure) : false;
       if (this.secure) {
         this.ssl_ca = ssl_ca ? String(ssl_ca) : null;
@@ -108,7 +123,7 @@
 
     IOServer.prototype.start = function() {
       var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name, year;
-      if (this.verbose) {
+      if (LOG_LEVEL.indexOf(this.verbose) < 5) {
         d = new Date();
         day = d.getDate();
         month = d.getMonth();
@@ -119,8 +134,8 @@
         hours = hours < 10 ? "0" + hours : "" + hours;
         minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
         seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-        this._logify(0, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
-        this._logify(0, "#[*] Starting server on " + this.host + ":" + this.port + " ...");
+        this._logify(5, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
+        this._logify(5, "[*] Starting server on " + this.host + ":" + this.port + " ...");
       }
       if (this.secure) {
         app = https.createServer({
@@ -138,15 +153,15 @@
       ref = this.service_list;
       for (service_name in ref) {
         service = ref[service_name];
-        if (this.login != null) {
+        if (this.login) {
           ns[service_name] = this.io.of("/" + this.login + "/" + service_name);
         } else {
           ns[service_name] = this.io.of("/" + service_name);
         }
-        this._logify(6, "#[*] service " + service_name + " registered...");
+        this._logify(6, "[*] service " + service_name + " registered...");
         ns[service_name].on('connection', this._handleEvents(ns[service_name], service_name));
       }
-      if ((this.channel_list != null) && this.channel_list.length > 0) {
+      if (this.channel_list && this.channel_list.length > 0) {
         return io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
       }
     };
@@ -160,11 +175,11 @@
         cb: (function(_this) {
           return function(connectedSockets) {
             var i, results, socket;
-            if (connectedSockets != null) {
+            if (connectedSockets) {
               results = [];
               for (i in connectedSockets) {
                 socket = connectedSockets[i];
-                if (socket != null) {
+                if (socket) {
                   results.push(socket.emit(method, data));
                 } else {
                   results.push(void 0);
@@ -181,7 +196,7 @@
       return (function(_this) {
         return function(socket) {
           var action, index, ref, results;
-          _this._logify(5, "#[*] received connection for service " + service_name);
+          _this._logify(5, "[*] received connection for service " + service_name);
           ref = _this.method_list[service_name];
           results = [];
           for (index in ref) {
@@ -192,7 +207,7 @@
             if (action === 'constructor') {
               continue;
             }
-            _this._logify(7, "#[*] method " + action + " of " + service_name + " listening...");
+            _this._logify(6, "[*] method " + action + " of " + service_name + " listening...");
             results.push(socket.on(action, _this._handleCallback({
               service: service_name,
               method: action,
@@ -211,7 +226,7 @@
       return (function(_this) {
         return function(data) {
           return Fiber(function() {
-            _this._logify(7, "#[*] call method " + method + " of service " + service);
+            _this._logify(6, "[*] call method " + method + " of service " + service);
             return _this.service_list[service][method](socket, data);
           }).run();
         };
@@ -254,7 +269,7 @@
       ref = arg != null ? arg : {}, service = ref.service, room = ref.room, cb = ref.cb;
       res = [];
       ns = this.io.of(service || "/");
-      if ((ns != null) && (ns.connected != null)) {
+      if (ns && ns.connected) {
         ref1 = ns.connected;
         for (id in ref1) {
           i = ref1[id];
@@ -270,7 +285,7 @@
     IOServer.prototype._logify = function(level, text) {
       var current_level;
       current_level = LOG_LEVEL.indexOf(this.verbose);
-      if (level >= current_level) {
+      if (level <= current_level) {
         if (level <= 4) {
           return console.error(text);
         } else {
