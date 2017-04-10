@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.2.2                        */
+/*         IOServer - v0.2.3                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -12,7 +12,7 @@
 /****************************************************/
 
 (function() {
-  var Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, fs, http, https,
+  var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, fs, http, https,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -25,6 +25,8 @@
   https = require('https');
 
   Fiber = require('fibers');
+
+  CONFIG = require('./package.json');
 
   PORT = 8080;
 
@@ -95,6 +97,10 @@
       }
     };
 
+    IOServer.prototype.getInstance = function(name) {
+      return this.service_list[name];
+    };
+
     IOServer.prototype._handler = function(req, res) {
       var file, files, j, len, readStream, results;
       if (this.share) {
@@ -124,18 +130,15 @@
     };
 
     IOServer.prototype.start = function() {
-      var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name, year;
+      var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name;
       d = new Date();
-      day = d.getDate();
-      month = d.getMonth();
-      year = d.getFullYear();
-      hours = d.getHours();
-      minutes = d.getMinutes();
-      seconds = d.getSeconds();
-      hours = hours < 10 ? "0" + hours : "" + hours;
-      minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
-      seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-      this._logify(5, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
+      day = d.getDate() < 10 ? "0" + (d.getDate()) : d.getDate();
+      month = d.getMonth() < 10 ? "0" + (d.getMonth()) : d.getMonth();
+      hours = d.getHours() < 10 ? "0" + (d.getHours()) : d.getHours();
+      minutes = d.getMinutes() < 10 ? "0" + (d.getMinutes()) : d.getMinutes();
+      seconds = d.getSeconds() < 10 ? "0" + (d.getSeconds()) : d.getSeconds();
+      this._logify(4, "################### IOServer v" + CONFIG.version + " ###################");
+      this._logify(5, "################### " + day + "/" + month + "/" + (d.getFullYear()) + " - " + hours + ":" + minutes + ":" + seconds + " #########################");
       this._logify(5, "[*] Starting server on " + this.host + ":" + this.port + " ...");
       if (this.secure) {
         app = https.createServer({
@@ -162,34 +165,16 @@
         ns[service_name].on('connection', this._handleEvents(ns[service_name], service_name));
       }
       if (this.channel_list && this.channel_list.length > 0) {
-        return io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
+        return this.io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
       }
     };
 
     IOServer.prototype.interact = function(arg) {
-      var data, method, ref, room, service;
+      var data, method, ns, ref, room, service, sockets;
       ref = arg != null ? arg : {}, service = ref.service, room = ref.room, method = ref.method, data = ref.data;
-      return this._findClientsSocket({
-        room: room,
-        service: service,
-        cb: (function(_this) {
-          return function(connectedSockets) {
-            var i, results, socket;
-            if (connectedSockets) {
-              results = [];
-              for (i in connectedSockets) {
-                socket = connectedSockets[i];
-                if (socket) {
-                  results.push(socket.emit(method, data));
-                } else {
-                  results.push(void 0);
-                }
-              }
-              return results;
-            }
-          };
-        })(this)
-      });
+      ns = this.io.of(service || "/");
+      sockets = room ? ns["in"](room) : ns;
+      return sockets.emit(method, data);
     };
 
     IOServer.prototype._handleEvents = function(ns, service_name) {
@@ -270,28 +255,10 @@
       return result;
     };
 
-    IOServer.prototype._findClientsSocket = function(arg) {
-      var cb, i, id, ns, ref, ref1, res, room, service;
-      ref = arg != null ? arg : {}, service = ref.service, room = ref.room, cb = ref.cb;
-      res = [];
-      ns = this.io.of(service || "/");
-      if (ns && ns.connected) {
-        ref1 = ns.connected;
-        for (id in ref1) {
-          i = ref1[id];
-          if (indexOf.call(Object.keys(ns.connected[id].rooms), room) >= 0) {
-            this._logify(7, "send notif " + service + " to " + id + " in " + room);
-            res.push(ns.connected[id]);
-          }
-        }
-      }
-      return cb(res);
-    };
-
     IOServer.prototype._logify = function(level, text) {
       var current_level;
       current_level = LOG_LEVEL.indexOf(this.verbose);
-      if (level <= current_level) {
+      if (level >= current_level) {
         if (level <= 4) {
           return console.error(text);
         } else {

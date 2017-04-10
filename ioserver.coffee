@@ -20,6 +20,7 @@ http   = require 'http'
 https  = require 'https'
 Fiber  = require 'fibers'
 
+CONFIG     = require './package.json'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
@@ -79,6 +80,9 @@ module.exports = class IOServer
         else
             @_logify 3 ,"#[!] Service name MUST be longer than 2 characters"
 
+    # Get Instance running
+    getInstance: (name) -> @service_list[name]
+
     # Allow your small server to share some stuff
     _handler: (req, res) =>
         if @share
@@ -104,16 +108,13 @@ module.exports = class IOServer
     # Launch socket IO and get ready to handle events on connection
     start: () ->
         d = new Date()
-        day = d.getDate()
-        month = d.getMonth()
-        year = d.getFullYear()
-        hours = d.getHours()
-        minutes = d.getMinutes()
-        seconds = d.getSeconds()
-        hours = if hours < 10 then "0#{hours}" else "#{hours}"
-        minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
-        seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
-        @_logify 5, "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
+        day = if d.getDate() < 10 then "0#{d.getDate()}" else d.getDate()
+        month = if d.getMonth() < 10 then "0#{d.getMonth()}" else d.getMonth()
+        hours = if d.getHours() < 10 then "0#{d.getHours()}" else d.getHours()
+        minutes = if d.getMinutes() < 10 then "0#{d.getMinutes()}" else d.getMinutes()
+        seconds = if d.getSeconds() < 10 then "0#{d.getSeconds()}" else d.getSeconds()
+        @_logify 4, "################### IOServer v#{CONFIG.version} ###################"
+        @_logify 5, "################### #{day}/#{month}/#{d.getFullYear()} - #{hours}:#{minutes}:#{seconds} #########################"
         @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
 
         if @secure
@@ -142,19 +143,13 @@ module.exports = class IOServer
 
         if @channel_list and @channel_list.length > 0
             # Register all channels by their room
-            io.sockets.on 'connection', @_handleEvents(io.sockets, 'global')
+            @io.sockets.on 'connection', @_handleEvents(io.sockets, 'global')
     
     # Allow sending message of specific service from external method
     interact: ({service, room, method, data}={}) ->
-        @_findClientsSocket
-            room: room
-            service: service
-            cb: (connectedSockets) =>
-                if connectedSockets
-                    for i, socket of connectedSockets
-                        # avoid undefined
-                        if socket
-                            socket.emit method, data
+        ns = @io.of(service ||"/")
+        sockets = if room then ns.in(room) else ns
+        sockets.emit method, data
 
     # Once a client is connected, get ready to handle his events
     _handleEvents: (ns, service_name) ->
@@ -214,20 +209,9 @@ module.exports = class IOServer
 
         return result
 
-    _findClientsSocket: ({service, room, cb}={}) ->
-        res = []
-        ns = @io.of(service ||"/")
-
-        if ns and ns.connected
-            for id, i of ns.connected
-                if room in Object.keys(ns.connected[id].rooms)
-                    @_logify 7, "send notif #{service} to #{id} in #{room}"
-                    res.push ns.connected[id]
-        cb res
-
     _logify: (level, text) ->
         current_level = LOG_LEVEL.indexOf @verbose
-        if level <= current_level
+        if level >= current_level
             if level <= 4
                 console.error text
             else
