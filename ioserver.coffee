@@ -40,13 +40,13 @@ module.exports = class IOServer
         
         # Process transport mode options
         @mode = []
-        if mode.constructor is Array
-            for i,m of mode
-                if String(m).toLowerCase() in TRANSPORTS
-                    @mode.push m
-
-        else if String(mode).toLowerCase() in TRANSPORTS
-            @mode.push String(mode).toLowerCase()
+        if mode
+            if String(mode).toLowerCase() in TRANSPORTS
+                @mode.push String(mode).toLowerCase()
+            else if mode.constructor is Array
+                for i,m of mode
+                    if String(m).toLowerCase() in TRANSPORTS
+                        @mode.push m
         else
             @mode.push 'websocket'
             @mode.push 'xhr-polling'
@@ -103,19 +103,18 @@ module.exports = class IOServer
             
     # Launch socket IO and get ready to handle events on connection
     start: () ->
-        if LOG_LEVEL.indexOf(@verbose) < 5
-            d = new Date()
-            day = d.getDate()
-            month = d.getMonth()
-            year = d.getFullYear()
-            hours = d.getHours()
-            minutes = d.getMinutes()
-            seconds = d.getSeconds()
-            hours = if hours < 10 then "0#{hours}" else "#{hours}"
-            minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
-            seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
-            @_logify 5, "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
-            @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
+        d = new Date()
+        day = d.getDate()
+        month = d.getMonth()
+        year = d.getFullYear()
+        hours = d.getHours()
+        minutes = d.getMinutes()
+        seconds = d.getSeconds()
+        hours = if hours < 10 then "0#{hours}" else "#{hours}"
+        minutes = if minutes < 10 then ":0#{minutes}" else ":#{minutes}"
+        seconds = if seconds < 10 then ":0#{seconds}" else ":#{seconds}"
+        @_logify 5, "################### #{day}/#{month}/#{year} - #{hours}#{minutes}#{seconds} #########################"
+        @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
 
         if @secure
             app = https.createServer { key: fs.readFileSync(@ssl_key), cert: fs.readFileSync(@ssl_cert), ca: fs.readFileSync(@ssl_ca) }, @_handler
@@ -178,10 +177,14 @@ module.exports = class IOServer
     # On a specific event call the appropriate method of object
     _handleCallback: ({service, method, socket, namespace}) ->
         (data) =>
-            Fiber( =>
-                @_logify 6, "[*] call method #{method} of service #{service}"
-                @service_list[service][method] socket, data
-            ).run()
+            try
+                Fiber( =>
+                    @_logify 6, "[*] call method #{method} of service #{service}"
+                    @service_list[service][method] socket, data
+                ).run()
+            # Catch remaining errors
+            catch err
+                console.log "[!] Error while calling #{method}: #{err}"
             
     # Based on Kri-ban solution
     # http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript

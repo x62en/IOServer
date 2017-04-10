@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.2.1                        */
+/*         IOServer - v0.2.2                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -50,15 +50,17 @@
       this.login = login ? String(login) : null;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
       this.mode = [];
-      if (mode.constructor === Array) {
-        for (i in mode) {
-          m = mode[i];
-          if (ref1 = String(m).toLowerCase(), indexOf.call(TRANSPORTS, ref1) >= 0) {
-            this.mode.push(m);
+      if (mode) {
+        if (ref1 = String(mode).toLowerCase(), indexOf.call(TRANSPORTS, ref1) >= 0) {
+          this.mode.push(String(mode).toLowerCase());
+        } else if (mode.constructor === Array) {
+          for (i in mode) {
+            m = mode[i];
+            if (ref2 = String(m).toLowerCase(), indexOf.call(TRANSPORTS, ref2) >= 0) {
+              this.mode.push(m);
+            }
           }
         }
-      } else if (ref2 = String(mode).toLowerCase(), indexOf.call(TRANSPORTS, ref2) >= 0) {
-        this.mode.push(String(mode).toLowerCase());
       } else {
         this.mode.push('websocket');
         this.mode.push('xhr-polling');
@@ -123,20 +125,18 @@
 
     IOServer.prototype.start = function() {
       var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name, year;
-      if (LOG_LEVEL.indexOf(this.verbose) < 5) {
-        d = new Date();
-        day = d.getDate();
-        month = d.getMonth();
-        year = d.getFullYear();
-        hours = d.getHours();
-        minutes = d.getMinutes();
-        seconds = d.getSeconds();
-        hours = hours < 10 ? "0" + hours : "" + hours;
-        minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
-        seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
-        this._logify(5, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
-        this._logify(5, "[*] Starting server on " + this.host + ":" + this.port + " ...");
-      }
+      d = new Date();
+      day = d.getDate();
+      month = d.getMonth();
+      year = d.getFullYear();
+      hours = d.getHours();
+      minutes = d.getMinutes();
+      seconds = d.getSeconds();
+      hours = hours < 10 ? "0" + hours : "" + hours;
+      minutes = minutes < 10 ? ":0" + minutes : ":" + minutes;
+      seconds = seconds < 10 ? ":0" + seconds : ":" + seconds;
+      this._logify(5, "################### " + day + "/" + month + "/" + year + " - " + hours + minutes + seconds + " #########################");
+      this._logify(5, "[*] Starting server on " + this.host + ":" + this.port + " ...");
       if (this.secure) {
         app = https.createServer({
           key: fs.readFileSync(this.ssl_key),
@@ -225,10 +225,16 @@
       service = arg.service, method = arg.method, socket = arg.socket, namespace = arg.namespace;
       return (function(_this) {
         return function(data) {
-          return Fiber(function() {
-            _this._logify(6, "[*] call method " + method + " of service " + service);
-            return _this.service_list[service][method](socket, data);
-          }).run();
+          var err, error;
+          try {
+            return Fiber(function() {
+              _this._logify(6, "[*] call method " + method + " of service " + service);
+              return _this.service_list[service][method](socket, data);
+            }).run();
+          } catch (error) {
+            err = error;
+            return console.log("[!] Error while calling " + method + ": " + err);
+          }
         };
       })(this);
     };
