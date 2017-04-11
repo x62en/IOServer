@@ -211,7 +211,7 @@ module.exports = class IOServer
 
     _logify: (level, text) ->
         current_level = LOG_LEVEL.indexOf @verbose
-        if level >= current_level
+        if level <= current_level
             if level <= 4
                 console.error text
             else

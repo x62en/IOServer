@@ -1,5 +1,5 @@
 /****************************************************/
-/*         IOServer - v0.2.3                        */
+/*         IOServer - v0.2.4                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
@@ -258,7 +258,7 @@
     IOServer.prototype._logify = function(level, text) {
       var current_level;
       current_level = LOG_LEVEL.indexOf(this.verbose);
-      if (level >= current_level) {
+      if (level <= current_level) {
         if (level <= 4) {
           return console.error(text);
         } else {
