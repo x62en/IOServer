@@ -1,6 +1,6 @@
 {
   "name": "ioserver",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...",
   "main": "ioserver.js",
   "dependencies": {

@@ -1,0 +1,114 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/nodejs', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@3.10.9
+3 info using node@v4.8.3
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   escapedName: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/home/usr/Documents/Dev/Coffeescript/IOServer',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /home/usr/.npm/ioserver/0.2.4/package.tgz not in flight; packing
+9 verbose correctMkdir /home/usr/.npm correctMkdir not in flight; initializing
+10 info lifecycle ioserver@0.2.4~prepublish: ioserver@0.2.4
+11 silly lifecycle ioserver@0.2.4~prepublish: no script for prepublish, continuing
+12 verbose tar pack [ '/home/usr/.npm/ioserver/0.2.4/package.tgz',
+12 verbose tar pack   '/home/usr/Documents/Dev/Coffeescript/IOServer' ]
+13 verbose tarball /home/usr/.npm/ioserver/0.2.4/package.tgz
+14 verbose folder /home/usr/Documents/Dev/Coffeescript/IOServer
+15 verbose addLocalTarball adding from inside cache /home/usr/.npm/ioserver/0.2.4/package.tgz
+16 verbose correctMkdir /home/usr/.npm correctMkdir not in flight; initializing
+17 silly cache afterAdd ioserver@0.2.4
+18 verbose afterAdd /home/usr/.npm/ioserver/0.2.4/package/package.json not in flight; writing
+19 verbose correctMkdir /home/usr/.npm correctMkdir not in flight; initializing
+20 verbose afterAdd /home/usr/.npm/ioserver/0.2.4/package/package.json written
+21 silly publish { name: 'ioserver',
+21 silly publish   version: '0.2.4',
+21 silly publish   description: 'Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...',
+21 silly publish   main: 'ioserver.js',
+21 silly publish   dependencies:
+21 silly publish    { fibers: '^1.0.15',
+21 silly publish      'socket.io': '^2.0.1',
+21 silly publish      bufferutil: '^2.0.1',
+21 silly publish      'utf-8-validate': '^3.0.1' },
+21 silly publish   devDependencies: { 'coffee-script': '^1.9.1' },
+21 silly publish   scripts: { test: 'echo "Error: no test specified" && exit 1' },
+21 silly publish   repository:
+21 silly publish    { type: 'git',
+21 silly publish      url: 'git+https://github.com/x42en/IOServer.git' },
+21 silly publish   keywords: [ 'socket-io', 'coffeescript', 'service', 'network', '3l1x1r' ],
+21 silly publish   author: { name: 'Ben Mz' },
+21 silly publish   license: 'Apache-2.0',
+21 silly publish   bugs: { url: 'https://github.com/x42en/IOServer/issues' },
+21 silly publish   homepage: 'https://github.com/x42en/IOServer',
+21 silly publish   optionalDependencies: { bufferutil: '^2.0.1', 'utf-8-validate': '^3.0.1' },
+21 silly publish   readme: '# IOServer\n\n[![NPM](https://nodei.co/npm/ioserver.png?compact=true)](https://nodei.co/npm/ioserver/)\n\n[![Downloads per month](https://img.shields.io/npm/dm/ioserver.svg?maxAge=2592000)](https://www.npmjs.org/package/ioserver)\n[![npm version](https://img.shields.io/npm/v/ioserver.svg)](https://www.npmjs.org/package/ioserver)\n[![Build Status](https://travis-ci.org/x42en/IOServer.svg?branch=master)](https://travis-ci.org/x42en/IOServer)\n[![Dependencies](https://david-dm.org/x42en/ioserver.svg)](https://www.npmjs.org/package/ioserver)\n[![Known Vulnerabilities](https://snyk.io/test/github/x42en/ioserver/badge.svg)](https://snyk.io/test/github/x42en/ioserver)\n\n\nDamn simple way to setup your [Socket.io](http://socket.io) server using coffeescript.\n\nThis will launch a server on port specified (default: 8080) and will register all method of the class set as service, except ones starting by \'_\' (underscore).\nThese registrated methods will then be accessible as standard client-side socket.io event:\n\n```coffeescript\n  socket.emit \'method_name\', data\n```\n\n**Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**\n\nYou can also use Fiberized functions inside your methods, but **NOT IN CONSTRUCTORS !**\n\n\n## Install\n\nInstall with npm:\n  ```sh\n    npm install ioserver\n  ```\n  \n## Basic Usage\n\nRequire the module:\n  ```coffeescript\n    app = require \'ioserver\'\n  ```\n\nAdd services using:\n  ```coffeescript\n    app.addService\n      name:      \'service_name\'\n      service:   Service_Class\n  ```\n\nStart the server...\n  ```coffeescript\n    app.start()\n  ```\n\n\n## Extended usage\n\nYou can also interact directly with a method in specific namespace using:\n  ```coffeescript\n    app.interact\n      service:  \'service_name\'\n      method:   \'method_name\'\n      data:     data\n  ```\n\nCommon options are:\n  ```coffeescript\n    app = require \'ioserver\'\n      port:     8443                         # change listening port\n      host:     192.168.1.10                 # change listening host\n      mode:     \'websocket\'                  # Set socket.io client support transport\n                                             #   default is [\'websocket\',\'xhr-polling\']\n                                             #   available methods are [\'websocket\',\'htmlfile\',\'xhr-polling\',\'jsonp-polling\']\n      verbose:  \'INFOS\'                      # set verbosity level\n      share:    \'/path/to/share\'             # useful for letsencrypt compatibility\n      secure:   true                         # enable SSL listening\n      ssl_ca:   \'/path/to/ca/certificates\'\n      ssl_key:  \'/path/to/server/key\'\n      ssl_cert: \'/path/to/server/certificate\'\n\n      # TODO: \n      #login: \'test\'                          # set login in all query based on socketID?\n\n  ```\nYou can interact in a particular room of a service\n  ```coffeescript\n    app.interact\n      service:  \'service_name\'\n      room:     \'room_name\'\n      method:   \'method_name\'\n      data:     data\n  ```\n\n## Example\n\n1. Write a simple class (singleChat.coffee)\n  ```coffeescript\n    module.exports = class SingleChat\n      \n      constructor: () ->\n      \n      replay: (socket, text) ->\n        console.log "Someone say: #{text}."\n        socket.broadcast.emit \'message\', text\n\n      _notAccessible: (socket) ->\n        console.error "You should not be here !!"\n  ```\n\n2. Start server-side ioserver process (server.coffee)\n  ```coffeescript\n    server      = require \'ioserver\'\n    ChatService = require \'./singleChat\'\n\n    server.addService\n      service:  \'chat\'\n      method:   ChatService\n\n    server.start()\n  ```\n\n3. Compile and run server\n  ```bash\n    coffee -c *.coffee\n    node server.js\n  ```\n\n4. Write simple client wich interact with server class method as socket.io events\n  ```coffeescript\n    $           = require \'jquery\'\n    io          = require \'socket.io-client\'\n    NODE_SERVER = \'Your-server-ip\'\n    NODE_PORT   = \'Your-server-port\' # Default 8080\n\n    socket = io.connect "http://#{NODE_SERVER}:#{NODE_PORT}/chat"\n    \n    # When server emit action\n    socket.on \'message\', msg, ->\n      $(\'.message_list\').append "<div class=\'message\'>#{msg}</div>"\n\n    # Jquery client action\n    $(\'button.send\').on \'click\', ->\n      msg = $(\'input[name="message"]\').val()\n      socket.emit \'replay\', msg\n\n  ```\n\n## TODO\n\n### 1. write unit tests\n### 2. set user identification (?)',
+21 silly publish   readmeFilename: 'README.md',
+21 silly publish   gitHead: 'd4ac681ae700499b026321d8fb047d83e250089f',
+21 silly publish   _id: 'ioserver@0.2.4',
+21 silly publish   _shasum: 'a5b3faf21b27b8047a971d39f346aa7fb736ff0e',
+21 silly publish   _from: '.' }
+22 verbose getPublishConfig undefined
+23 silly mapToRegistry name ioserver
+24 silly mapToRegistry using default registry
+25 silly mapToRegistry registry https://registry.npmjs.org/
+26 silly mapToRegistry data Result {
+26 silly mapToRegistry   raw: 'ioserver',
+26 silly mapToRegistry   scope: null,
+26 silly mapToRegistry   escapedName: 'ioserver',
+26 silly mapToRegistry   name: 'ioserver',
+26 silly mapToRegistry   rawSpec: '',
+26 silly mapToRegistry   spec: 'latest',
+26 silly mapToRegistry   type: 'tag' }
+27 silly mapToRegistry uri https://registry.npmjs.org/ioserver
+28 verbose publish registryBase https://registry.npmjs.org/
+29 silly publish uploading /home/usr/.npm/ioserver/0.2.4/package.tgz
+30 verbose request uri https://registry.npmjs.org/ioserver
+31 verbose request sending authorization for write operation
+32 info attempt registry request try #1 at 15:53:51
+33 verbose request using bearer token for auth
+34 verbose request id 268e7d6d3f84948e
+35 http request PUT https://registry.npmjs.org/ioserver
+36 http 403 https://registry.npmjs.org/ioserver
+37 verbose headers { 'content-type': 'application/json',
+37 verbose headers   'cache-control': 'max-age=300',
+37 verbose headers   'content-length': '95',
+37 verbose headers   'accept-ranges': 'bytes',
+37 verbose headers   date: 'Thu, 11 May 2017 13:53:53 GMT',
+37 verbose headers   via: '1.1 varnish',
+37 verbose headers   connection: 'keep-alive',
+37 verbose headers   'x-served-by': 'cache-lhr6348-LHR',
+37 verbose headers   'x-cache': 'MISS',
+37 verbose headers   'x-cache-hits': '0',
+37 verbose headers   'x-timer': 'S1494510832.957248,VS0,VE1270',
+37 verbose headers   vary: 'Accept-Encoding' }
+38 verbose request invalidating /home/usr/.npm/registry.npmjs.org/ioserver on PUT
+39 error publish Failed PUT 403
+40 verbose stack Error: "You cannot publish over the previously published version 0.2.4." : ioserver
+40 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:302:12)
+40 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:290:14)
+40 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:210:14)
+40 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:187:22)
+40 verbose stack     at emitTwo (events.js:87:13)
+40 verbose stack     at Request.emit (events.js:172:7)
+40 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1048:10)
+40 verbose stack     at emitOne (events.js:77:13)
+40 verbose stack     at Request.emit (events.js:169:7)
+40 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:969:12)
+41 verbose statusCode 403
+42 verbose pkgid ioserver
+43 verbose cwd /home/usr/Documents/Dev/Coffeescript/IOServer
+44 error Linux 4.10.0-14.1-liquorix-amd64
+45 error argv "/usr/bin/nodejs" "/usr/local/bin/npm" "publish"
+46 error node v4.8.3
+47 error npm  v3.10.9
+48 error code E403
+49 error "You cannot publish over the previously published version 0.2.4." : ioserver
+50 error If you need help, you may report this error at:
+50 error     <https://github.com/npm/npm/issues>
+51 verbose exit [ 1, true ]
