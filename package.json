@@ -5,7 +5,7 @@
   "main": "ioserver.js",
   "dependencies": {
     "fibers": "^1.0.15",
-    "socket.io": "^1.7.3"
+    "socket.io": "^2.0.1"
   },
   "devDependencies": {
     "coffee-script": "^1.9.1"
@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/x42en/IOServer",
   "optionalDependencies": {
-    "bufferutil": "^1.0.0",
-    "utf-8-validate": "^1.2.2"
+    "bufferutil": "^2.0.1",
+    "utf-8-validate": "^3.0.1"
   }
 }
