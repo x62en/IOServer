@@ -13,11 +13,9 @@ Damn simple way to setup your [Socket.io](http://socket.io) server using coffees
 
 This will launch a server on port specified (default: 8080) and will register all method of the class set as service, except ones starting by '_' (underscore).
 These registrated methods will then be accessible as standard client-side socket.io event:
-
 ```coffeescript
   socket.emit 'method_name', data
 ```
-
 **Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**
 
 You can also use Fiberized functions inside your methods, but **NOT IN CONSTRUCTORS !**
@@ -66,8 +64,8 @@ Common options are:
       port:     8443                         # change listening port
       host:     192.168.1.10                 # change listening host
       mode:     'websocket'                  # Set socket.io client support transport
-                                             #   default is ['websocket','xhr-polling']
-                                             #   available methods are ['websocket','htmlfile','xhr-polling','jsonp-polling']
+                                             #   default is ['websocket','polling']
+                                             #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
       verbose:  'INFOS'                      # set verbosity level
       share:    '/path/to/share'             # useful for letsencrypt compatibility
       secure:   true                         # enable SSL listening
@@ -109,11 +107,13 @@ You can interact in a particular room of a service
     server      = require 'ioserver'
     ChatService = require './singleChat'
 
-    server.addService
+    app = new Server {}
+
+    app.addService
       service:  'chat'
       method:   ChatService
 
-    server.start()
+    app.start()
   ```
 
 3. Compile and run server
@@ -144,5 +144,5 @@ You can interact in a particular room of a service
 
 ## TODO
 
-### 1. write unit tests
-### 2. set user identification (?)
+> 1. write unit tests
+> 2. set user identification (?)
