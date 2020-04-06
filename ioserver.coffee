@@ -50,7 +50,7 @@ module.exports = class IOServer
                         @mode.push m
         else
             @mode.push 'websocket'
-            @mode.push 'xhr-polling'
+            @mode.push 'polling'
         
         @secure = if secure then Boolean(secure) else false
         if @secure

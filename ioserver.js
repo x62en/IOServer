@@ -1,16 +1,15 @@
 /****************************************************/
-/*         IOServer - v0.2.5                        */
+/*         IOServer - v0.3.1                        */
 /*                                                  */
 /*         Damn simple socket.io server             */
 /****************************************************/
-/*             -    Copyright 2017    -             */
+/*             -    Copyright 2020    -             */
 /*                                                  */
 /*   License: Apache v 2.0                          */
 /*   @Author: Ben Mz                                */
-/*   @Email: 0x42en (at) gmail.com                  */
+/*   @Email: 0x42en (at) users.noreply.github.com   */
 /*                                                  */
 /****************************************************/
-
 (function() {
   var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, fs, http, https,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -38,7 +37,7 @@
 
   module.exports = IOServer = (function() {
     function IOServer(arg) {
-      var e, error, host, i, login, m, mode, port, ref, ref1, ref2, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
+      var e, host, i, login, m, mode, port, ref, ref1, ref2, secure, share, ssl_ca, ssl_cert, ssl_key, verbose;
       host = arg.host, port = arg.port, login = arg.login, verbose = arg.verbose, share = arg.share, secure = arg.secure, ssl_ca = arg.ssl_ca, ssl_cert = arg.ssl_cert, ssl_key = arg.ssl_key, mode = arg.mode;
       this._handler = bind(this._handler, this);
       this.host = host ? String(host) : HOST;
@@ -65,7 +64,7 @@
         }
       } else {
         this.mode.push('websocket');
-        this.mode.push('xhr-polling');
+        this.mode.push('polling');
       }
       this.secure = secure ? Boolean(secure) : false;
       if (this.secure) {
@@ -78,7 +77,7 @@
     }
 
     IOServer.prototype.addService = function(arg) {
-      var e, error, name, service;
+      var e, name, service;
       name = arg.name, service = arg.service;
       if (name && (name.length > 2) && service && service.prototype) {
         try {
@@ -210,7 +209,7 @@
       service = arg.service, method = arg.method, socket = arg.socket, namespace = arg.namespace;
       return (function(_this) {
         return function(data) {
-          var err, error;
+          var err;
           try {
             return Fiber(function() {
               _this._logify(6, "[*] call method " + method + " of service " + service);
