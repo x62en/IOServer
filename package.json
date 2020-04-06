@@ -1,15 +1,15 @@
 {
   "name": "ioserver",
-  "version": "0.2.5",
+  "version": "0.3.1",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...",
   "main": "ioserver.js",
   "dependencies": {
-    "fibers": "^1.0.15",
-    "socket.io": "^2.0.1",
+    "fibers": "^4.0.2",
+    "socket.io": "^2.3.0",
     "snyk": "^1.234.0"
   },
   "devDependencies": {
-    "coffee-script": "^1.9.1"
+    "coffeescript": "^1.12.17"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
