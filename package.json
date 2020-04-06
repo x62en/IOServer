@@ -9,7 +9,7 @@
     "snyk": "^1.234.0"
   },
   "devDependencies": {
-    "coffeescript": "^1.12.17"
+    "coffeescript": "^2.5.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
