@@ -37,7 +37,7 @@ TRANSPORTS = ['websocket','htmlfile','xhr-polling','jsonp-polling']
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) ->
+    constructor: ({host, port, login, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) ->
         @host = if host then String(host) else HOST
         try
             @port = if port then Number(port) else PORT
@@ -46,6 +46,7 @@ module.exports = class IOServer
         
         @share = if share then String(share) else null
         @login = if login then String(login) else null
+        @cookie = if cookie then Boolean(cookie) else false
         @verbose = if String(verbose).toUpperCase() in LOG_LEVEL then String(verbose).toUpperCase() else 'ERROR'
         
         # Process transport mode options
@@ -81,8 +82,6 @@ module.exports = class IOServer
                     console.error "[!] Error: you are NOT allowed to use fiberized function in constructor..."
                 else
                     console.error "[!] Error while instantiate #{name} -> #{e}"
-                
-            
 
             # list methods of object... it will be the list of io actions
             @method_list[name] = @_dumpMethods service
@@ -124,18 +123,21 @@ module.exports = class IOServer
         seconds = if d.getSeconds() < 10 then "0#{d.getSeconds()}" else d.getSeconds()
         @_logify 4, "################### IOServer v#{CONFIG.version} ###################"
         @_logify 5, "################### #{day}/#{month}/#{d.getFullYear()} - #{hours}:#{minutes}:#{seconds} #########################"
-        @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
 
         if @secure
             app = https.createServer { key: fs.readFileSync(@ssl_key), cert: fs.readFileSync(@ssl_cert), ca: fs.readFileSync(@ssl_ca) }, @_handler
         else
             app = http.createServer @_handler
 
-        app.listen @port, @host
-        @io = Server.listen(app)
+        server = app.listen @port, @host
 
         # enable transports
-        @io.set 'transports', @mode
+        @io = require('socket.io')(app, {
+            transports: @mode,
+            pingInterval: 10000,
+            pingTimeout: 5000,
+            cookie: @cookie
+        })
         
         ns = {}
 
@@ -145,14 +147,21 @@ module.exports = class IOServer
                 ns[service_name] = @io.of "/#{@login}/#{service_name}"
             else
                 ns[service_name] = @io.of "/#{service_name}"
-            
-            @_logify 6, "[*] service #{service_name} registered..."
+
+            # Ensure namespace conditions are met
+            ns[service_name].use (socket, next) =>
+                next()
+
             # get ready for connection
-            ns[service_name].on 'connection', @_handleEvents(ns[service_name], service_name)
+            ns[service_name].use @_handleEvents(ns[service_name], service_name)
+            @_logify 6, "[*] service #{service_name} registered..."
 
         if @channel_list and @channel_list.length > 0
             # Register all channels by their room
             @io.sockets.on 'connection', @_handleEvents(io.sockets, 'global')
+        
+        @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
+        @io.listen server
     
     # Allow sending message of specific service from external method
     interact: ({service, room, method, data}={}) ->
@@ -162,7 +171,7 @@ module.exports = class IOServer
 
     # Once a client is connected, get ready to handle his events
     _handleEvents: (ns, service_name) ->
-        (socket) =>
+        (socket, next) =>
             @_logify 5, "[*] received connection for service #{service_name}"
             for index, action of @method_list[service_name]
                 # does not listen for private methods
@@ -177,6 +186,7 @@ module.exports = class IOServer
                                     method: action
                                     socket: socket
                                     namespace: ns
+                next()
 
     # On a specific event call the appropriate method of object
     _handleCallback: ({service, method, socket, namespace}) ->

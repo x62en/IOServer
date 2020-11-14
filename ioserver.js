@@ -1,4 +1,4 @@
-(function () {
+(function() {
   //###################################################
   //         IOServer - v0.3.2                        #
   //                                                  #
@@ -48,7 +48,7 @@
 
   module.exports = IOServer = class IOServer {
     // Define the variables used by the server
-    constructor({ host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode }) {
+    constructor({host, port, login, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) {
       var e, i, m, ref, ref1, ref2;
       // Allow your small server to share some stuff
       this._handler = this._handler.bind(this);
@@ -61,8 +61,9 @@
       }
       this.share = share ? String(share) : null;
       this.login = login ? String(login) : null;
+      this.cookie = cookie ? Boolean(cookie) : false;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
-
+      
       // Process transport mode options
       this.mode = [];
       if (mode) {
@@ -92,7 +93,7 @@
 
     // Allow to register easily a class to this server
     // this class will be bind to a specific namespace
-    addService({ name, service }) {
+    addService({name, service}) {
       var e;
       if (name && (name.length > 2) && service && service.prototype) {
         try {
@@ -105,7 +106,6 @@
             console.error(`[!] Error while instantiate ${name} -> ${e}`);
           }
         }
-
         // list methods of object... it will be the list of io actions
         return this.method_list[name] = this._dumpMethods(service);
       } else {
@@ -130,10 +130,10 @@
         for (j = 0, len = files.length; j < len; j++) {
           file = files[j];
           readStream = fs.createReadStream(`${this.share}/${file}`);
-          readStream.on('open', function () {
+          readStream.on('open', function() {
             return readStream.pipe(res);
           });
-          readStream.on('error', function (err) {
+          readStream.on('error', function(err) {
             res.writeHead(500);
             return res.end(err);
           });
@@ -146,10 +146,10 @@
       }
     }
 
-
-    // Launch socket IO and get ready to handle events on connection
+    
+      // Launch socket IO and get ready to handle events on connection
     start() {
-      var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name;
+      var app, d, day, hours, minutes, month, ns, ref, seconds, server, service, service_name;
       d = new Date();
       day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
       month = d.getMonth() < 10 ? `0${d.getMonth()}` : d.getMonth();
@@ -158,7 +158,6 @@
       seconds = d.getSeconds() < 10 ? `0${d.getSeconds()}` : d.getSeconds();
       this._logify(4, `################### IOServer v${CONFIG.version} ###################`);
       this._logify(5, `################### ${day}/${month}/${d.getFullYear()} - ${hours}:${minutes}:${seconds} #########################`);
-      this._logify(5, `[*] Starting server on ${this.host}:${this.port} ...`);
       if (this.secure) {
         app = https.createServer({
           key: fs.readFileSync(this.ssl_key),
@@ -168,10 +167,14 @@
       } else {
         app = http.createServer(this._handler);
       }
-      app.listen(this.port, this.host);
-      this.io = Server.listen(app);
+      server = app.listen(this.port, this.host);
       // enable transports
-      this.io.set('transports', this.mode);
+      this.io = require('socket.io')(app, {
+        transports: this.mode,
+        pingInterval: 10000,
+        pingTimeout: 5000,
+        cookie: this.cookie
+      });
       ns = {};
       ref = this.service_list;
       // Register each different services by its namespace
@@ -182,19 +185,25 @@
         } else {
           ns[service_name] = this.io.of(`/${service_name}`);
         }
-        this._logify(6, `[*] service ${service_name} registered...`);
+        // Ensure namespace conditions are met
+        ns[service_name].use((socket, next) => {
+          return next();
+        });
         // get ready for connection
-        ns[service_name].on('connection', this._handleEvents(ns[service_name], service_name));
+        ns[service_name].use(this._handleEvents(ns[service_name], service_name));
+        this._logify(6, `[*] service ${service_name} registered...`);
       }
       if (this.channel_list && this.channel_list.length > 0) {
         // Register all channels by their room
-        return this.io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
+        this.io.sockets.on('connection', this._handleEvents(io.sockets, 'global'));
       }
+      this._logify(5, `[*] Starting server on ${this.host}:${this.port} ...`);
+      return this.io.listen(server);
     }
 
-
-    // Allow sending message of specific service from external method
-    interact({ service, room, method, data } = {}) {
+    
+      // Allow sending message of specific service from external method
+    interact({service, room, method, data} = {}) {
       var ns, sockets;
       ns = this.io.of(service || "/");
       sockets = room ? ns.in(room) : ns;
@@ -203,7 +212,7 @@
 
     // Once a client is connected, get ready to handle his events
     _handleEvents(ns, service_name) {
-      return (socket) => {
+      return (socket, next) => {
         var action, index, ref, results;
         this._logify(5, `[*] received connection for service ${service_name}`);
         ref = this.method_list[service_name];
@@ -219,19 +228,20 @@
             continue;
           }
           this._logify(6, `[*] method ${action} of ${service_name} listening...`);
-          results.push(socket.on(action, this._handleCallback({
+          socket.on(action, this._handleCallback({
             service: service_name,
             method: action,
             socket: socket,
             namespace: ns
-          })));
+          }));
+          results.push(next());
         }
         return results;
       };
     }
 
     // On a specific event call the appropriate method of object
-    _handleCallback({ service, method, socket, namespace }) {
+    _handleCallback({service, method, socket, namespace}) {
       return (data) => {
         var err;
         try {
@@ -247,8 +257,8 @@
       };
     }
 
-
-    // Based on Kri-ban solution
+    
+      // Based on Kri-ban solution
     // http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
     // Thanks ___ ;)
     _dumpMethods(klass) {
