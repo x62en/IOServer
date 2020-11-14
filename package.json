@@ -1,12 +1,13 @@
 {
   "name": "ioserver",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Damn simple IOServer instance, allowing dev to add services as simple coffeescript class. Version 0.2.x use Fiber to call method...",
   "main": "ioserver.js",
   "dependencies": {
-    "fibers": "^4.0.2",
-    "socket.io": "^2.3.0",
-    "snyk": "^1.234.0"
+    "colors": "^1.4.0",
+    "fibers": "^5.0.0",
+    "snyk": "^1.426.0",
+    "socket.io": "^3.0.1"
   },
   "devDependencies": {
     "coffeescript": "^2.5.1"
@@ -34,8 +35,8 @@
   },
   "homepage": "https://github.com/x42en/IOServer",
   "optionalDependencies": {
-    "bufferutil": "^2.0.1",
-    "utf-8-validate": "^3.0.1"
+    "bufferutil": "^4.0.2",
+    "utf-8-validate": "^5.0.3"
   },
   "snyk": true
 }

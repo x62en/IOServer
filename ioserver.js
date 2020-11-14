@@ -1,6 +1,6 @@
-(function() {
+(function () {
   //###################################################
-  //         IOServer - v0.3.1                        #
+  //         IOServer - v0.3.2                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -48,7 +48,7 @@
 
   module.exports = IOServer = class IOServer {
     // Define the variables used by the server
-    constructor({host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) {
+    constructor({ host, port, login, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode }) {
       var e, i, m, ref, ref1, ref2;
       // Allow your small server to share some stuff
       this._handler = this._handler.bind(this);
@@ -62,7 +62,7 @@
       this.share = share ? String(share) : null;
       this.login = login ? String(login) : null;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
-      
+
       // Process transport mode options
       this.mode = [];
       if (mode) {
@@ -92,7 +92,7 @@
 
     // Allow to register easily a class to this server
     // this class will be bind to a specific namespace
-    addService({name, service}) {
+    addService({ name, service }) {
       var e;
       if (name && (name.length > 2) && service && service.prototype) {
         try {
@@ -105,7 +105,7 @@
             console.error(`[!] Error while instantiate ${name} -> ${e}`);
           }
         }
-        
+
         // list methods of object... it will be the list of io actions
         return this.method_list[name] = this._dumpMethods(service);
       } else {
@@ -130,10 +130,10 @@
         for (j = 0, len = files.length; j < len; j++) {
           file = files[j];
           readStream = fs.createReadStream(`${this.share}/${file}`);
-          readStream.on('open', function() {
+          readStream.on('open', function () {
             return readStream.pipe(res);
           });
-          readStream.on('error', function(err) {
+          readStream.on('error', function (err) {
             res.writeHead(500);
             return res.end(err);
           });
@@ -146,8 +146,8 @@
       }
     }
 
-    
-      // Launch socket IO and get ready to handle events on connection
+
+    // Launch socket IO and get ready to handle events on connection
     start() {
       var app, d, day, hours, minutes, month, ns, ref, seconds, service, service_name;
       d = new Date();
@@ -192,9 +192,9 @@
       }
     }
 
-    
-      // Allow sending message of specific service from external method
-    interact({service, room, method, data} = {}) {
+
+    // Allow sending message of specific service from external method
+    interact({ service, room, method, data } = {}) {
       var ns, sockets;
       ns = this.io.of(service || "/");
       sockets = room ? ns.in(room) : ns;
@@ -231,7 +231,7 @@
     }
 
     // On a specific event call the appropriate method of object
-    _handleCallback({service, method, socket, namespace}) {
+    _handleCallback({ service, method, socket, namespace }) {
       return (data) => {
         var err;
         try {
@@ -247,8 +247,8 @@
       };
     }
 
-    
-      // Based on Kri-ban solution
+
+    // Based on Kri-ban solution
     // http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
     // Thanks ___ ;)
     _dumpMethods(klass) {
