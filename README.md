@@ -62,7 +62,7 @@ Common options are:
   ```coffeescript
     app = require 'ioserver'
       port:     8443                         # change listening port
-      host:     192.168.1.10                 # change listening host
+      host:     '192.168.1.10'               # change listening host
       mode:     'websocket'                  # Set socket.io client support transport
                                              #   default is ['websocket','polling']
                                              #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
