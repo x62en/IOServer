@@ -24,7 +24,7 @@ You can also use Fiberized functions inside your methods, but **NOT IN CONSTRUCT
 ## Install
 
 Install with npm:
-  ```sh
+  ```bash
     npm install ioserver
   ```
   
