@@ -60,21 +60,23 @@ You can also interact directly with a method in specific namespace using:
 
 Common options are:
   ```coffeescript
-    app = require 'ioserver'
-      port:     8443                         # change listening port
-      host:     192.168.1.10                 # change listening host
-      mode:     'websocket'                  # Set socket.io client support transport
-                                             #   default is ['websocket','polling']
-                                             #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
-      verbose:  'INFOS'                      # set verbosity level
-      share:    '/path/to/share'             # useful for letsencrypt compatibility
-      secure:   true                         # enable SSL listening
-      ssl_ca:   '/path/to/ca/certificates'
-      ssl_key:  '/path/to/server/key'
-      ssl_cert: '/path/to/server/certificate'
+    IOServer = require 'ioserver'
 
-      # TODO: 
-      #login: 'test'                          # set login in all query based on socketID?
+    app = new IOServer
+        port:     8443                         # change listening port
+        host:     192.168.1.10                 # change listening host
+        mode:     'websocket'                  # Set socket.io client support transport
+                                              #   default is ['websocket','polling']
+                                              #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
+        verbose:  'INFOS'                      # set verbosity level
+        share:    '/path/to/share'             # useful for letsencrypt compatibility
+        secure:   true                         # enable SSL listening
+        ssl_ca:   '/path/to/ca/certificates'
+        ssl_key:  '/path/to/server/key'
+        ssl_cert: '/path/to/server/certificate'
+
+        # TODO: 
+        #login: 'test'                          # set login in all query based on socketID?
 
   ```
 You can interact in a particular room of a service
@@ -104,14 +106,14 @@ You can interact in a particular room of a service
 
 2. Start server-side ioserver process (server.coffee)
   ```coffeescript
-    server      = require 'ioserver'
+    IOServer      = require 'ioserver'
     ChatService = require './singleChat'
 
-    app = new Server {}
+    app = new IOServer {}
 
     app.addService
-      service:  'chat'
-      method:   ChatService
+      name:  'chat'
+      service:   ChatService
 
     app.start()
   ```
