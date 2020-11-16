@@ -28,6 +28,7 @@ Server = require 'socket.io'
 http   = require 'http'
 https  = require 'https'
 Fiber  = require 'fibers'
+crypto = require 'crypto'
 
 CONFIG     = require './package.json'
 PORT       = 8080
@@ -91,27 +92,46 @@ module.exports = class IOServer
     # Get Instance running
     getInstance: (name) -> @service_list[name]
 
+    _generateAcceptValue: (acceptKey) ->
+        return crypto
+        .createHash('sha1')
+        .update(acceptKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', 'binary')
+        .digest('base64')
+
     # Allow your small server to share some stuff
     _handler: (req, res) =>
-        if @share
-            files = fs.readdirSync @share
-            res.writeHead 200
-            
-            unless files.length > 0
-                res.end 'Shared path empty.'
-            
-            for file in files
-                readStream = fs.createReadStream("#{@share}/#{file}")
-                readStream.on 'open', () ->
-                    readStream.pipe(res)
-                readStream.on 'error', (err) ->
-                    res.writeHead 500
-                    res.end err
-                break
-            
-        else
-            res.writeHead 200
-            res.end 'Nothing shared.'
+        if req.headers['upgrade'] isnt 'websocket'
+            if @share
+                files = fs.readdirSync @share
+                res.writeHead 200
+                
+                unless files.length > 0
+                    res.end 'Shared path empty.'
+                
+                for file in files
+                    readStream = fs.createReadStream("#{@share}/#{file}")
+                    readStream.on 'open', () ->
+                        readStream.pipe(res)
+                    readStream.on 'error', (err) ->
+                        res.writeHead 500
+                        res.end err
+                    break
+                
+            else
+                res.writeHead 200
+                res.end 'Nothing shared.'
+        # else
+        #     # Read the websocket key provided by the client: 
+        #     acceptKey = req.headers['sec-websocket-key']; 
+        #     # Generate the response value to use in the response: 
+        #     hash = @_generateAcceptValue(acceptKey); 
+        #     # Write the HTTP response into an array of response lines: 
+        #     responseHeaders = [ 'HTTP/1.1 101 Web Socket Protocol Handshake', 'Upgrade: WebSocket', 'Connection: Upgrade', 'Sec-WebSocket-Accept': hash ]; 
+        #     # Write the response back to the client socket, being sure to append two 
+        #     # additional newlines so that the browser recognises the end of the response 
+        #     # header and doesn't continue to wait for more header data:
+        #     res.writeHead 200
+        #     res.write responseHeaders.join('\r\n') + '\r\n\r\n'
             
     # Launch socket IO and get ready to handle events on connection
     start: () ->
@@ -131,8 +151,9 @@ module.exports = class IOServer
 
         server = app.listen @port, @host
 
+        @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
         # enable transports
-        @io = require('socket.io')(app, {
+        @io = require('socket.io')(server, {
             transports: @mode,
             pingInterval: 10000,
             pingTimeout: 5000,
@@ -159,10 +180,8 @@ module.exports = class IOServer
         if @channel_list and @channel_list.length > 0
             # Register all channels by their room
             @io.sockets.on 'connection', @_handleEvents(io.sockets, 'global')
-        
-        @_logify 5, "[*] Starting server on #{@host}:#{@port} ..."
-        @io.listen server
-    
+
+
     # Allow sending message of specific service from external method
     interact: ({service, room, method, data}={}) ->
         ns = @io.of(service ||"/")
