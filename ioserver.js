@@ -23,10 +23,14 @@
   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   // See the License for the specific language governing permissions and
   // limitations under the License.
-  var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, crypto, fs, http, https,
+  var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, crypto, fs, http, https, path, url,
     indexOf = [].indexOf;
 
   fs = require('fs');
+
+  url = require('url');
+
+  path = require('path');
 
   Server = require('socket.io');
 
@@ -127,33 +131,62 @@
     _generateAcceptValue(acceptKey) {}
 
     _handler(req, res) {
-      var file, files, j, len, readStream, results;
-      if (!req.headers['upgrade'] || req.headers['upgrade'] !== 'websocket') {
-        if (this.share) {
-          files = fs.readdirSync(this.share);
-          res.writeHead(200);
-          if (!(files.length > 0)) {
-            res.end('Shared path empty.');
+      var contentTypesByExtension, filename, headers, uri;
+      if (this.share) {
+        uri = url.parse(req.url).pathname;
+        filename = path.join(this.share, uri);
+        contentTypesByExtension = {
+          '.html': "text/html; charset=utf-8",
+          '.css': "text/css; charset=utf-8",
+          '.js': "application/javascript; charset=utf-8",
+          '.png': "image/png"
+        };
+        headers = {
+          "Server": "IOServer",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff"
+        };
+        // Check file existence
+        return fs.exists(filename, (exists) => {
+          if (!exists) {
+            res.writeHead(404, headers);
+            res.write("404 Not Found\n");
+            res.end();
+            return;
           }
-          results = [];
-          for (j = 0, len = files.length; j < len; j++) {
-            file = files[j];
-            this._logify(5, `${this.share}/${file}`);
-            readStream = fs.createReadStream(`${this.share}/${file}`);
-            readStream.on('open', function() {
-              return readStream.pipe(res);
-            });
-            readStream.on('error', function(err) {
-              res.writeHead(500);
-              return res.end(err);
-            });
-            break;
+          
+          // If file is directory search for index.html
+          if (fs.statSync(filename).isDirectory()) {
+            filename = `${filename}/index.html`;
           }
-          return results;
-        } else {
-          res.writeHead(200);
-          return res.end('Nothing shared.');
-        }
+          
+          // Prevent directory listing
+          fs.exists(filename, function(exists) {
+            if (!exists) {
+              res.writeHead(403, headers);
+              res.write("403 Forbidden\n");
+              res.end();
+            }
+          });
+          return fs.readFile(filename, "binary", (err, file) => {
+            var contentType;
+            if (err) {
+              res.writeHead(500, headers);
+              res.write(`${err}\n`);
+              res.end();
+            }
+            contentType = contentTypesByExtension[path.extname(filename)];
+            if (contentType) {
+              headers["Content-Type"] = contentType;
+            }
+            res.writeHead(200, headers);
+            res.write(file, 'binary');
+            return res.end();
+          });
+        });
+      } else {
+        res.writeHead(200);
+        return res.end('Nothing shared.');
       }
     }
 

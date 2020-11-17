@@ -24,6 +24,8 @@
 # limitations under the License.
 
 fs     = require 'fs'
+url    = require 'url'
+path   = require 'path'
 Server = require 'socket.io'
 http   = require 'http'
 https  = require 'https'
@@ -100,27 +102,60 @@ module.exports = class IOServer
 
     # Allow your small server to share some stuff
     _handler: (req, res) =>
-        if not req.headers['upgrade'] or req.headers['upgrade'] isnt 'websocket'
-            if @share
-                files = fs.readdirSync @share
-                res.writeHead 200
+        if @share
+            uri = url.parse(req.url).pathname
+            filename = path.join(@share, uri)
+
+            contentTypesByExtension = {
+                '.html': "text/html; charset=utf-8"
+                '.css':  "text/css; charset=utf-8"
+                '.js':   "application/javascript; charset=utf-8"
+                '.png':  "image/png"
+            }
+
+            headers = {
+                "Server": "IOServer"
+                "Content-Type": "text/plain; charset=utf-8"
+                "X-Content-Type-Options": "nosniff"
+            }
+
+            # Check file existence
+            fs.exists filename, (exists) =>
+                if not exists
+                    res.writeHead 404, headers
+                    res.write "404 Not Found\n"
+                    res.end()
+                    return
                 
-                unless files.length > 0
-                    res.end 'Shared path empty.'
+                # If file is directory search for index.html
+                if fs.statSync(filename).isDirectory()
+                    filename = "#{filename}/index.html"
                 
-                for file in files
-                    @_logify 5, "#{@share}/#{file}"
-                    readStream = fs.createReadStream("#{@share}/#{file}")
-                    readStream.on 'open', () ->
-                        readStream.pipe(res)
-                    readStream.on 'error', (err) ->
-                        res.writeHead 500
-                        res.end err
-                    break
+                # Prevent directory listing
+                fs.exists filename, (exists) ->
+                    if not exists
+                        res.writeHead 403, headers
+                        res.write "403 Forbidden\n"
+                        res.end()
+                        return
                 
-            else
-                res.writeHead 200
-                res.end 'Nothing shared.'
+                fs.readFile filename, "binary", (err, file) =>
+                    if err
+                        res.writeHead 500, headers
+                        res.write "#{err}\n"
+                        res.end()
+                    
+                    contentType = contentTypesByExtension[path.extname(filename)]
+                    
+                    if contentType
+                        headers["Content-Type"] = contentType
+                    
+                    res.writeHead 200, headers
+                    res.write file, 'binary'
+                    res.end()
+        else
+            res.writeHead 200
+            res.end 'Nothing shared.'
 
     # Launch socket IO and get ready to handle events on connection
     start: () ->
