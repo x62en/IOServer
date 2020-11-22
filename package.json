@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Damn simple IOServer instance, allowing developpers to add services as simple coffeescript class.",
   "main": "ioserver.js",
+  "files": [
+    "./ioserver.js"
+  ],
   "dependencies": {
     "colors": "^1.4.0",
     "http-terminator": "^2.0.3",
