@@ -5,7 +5,6 @@
 [![Downloads per month](https://img.shields.io/npm/dm/ioserver.svg?maxAge=2592000)](https://www.npmjs.org/package/ioserver)
 [![npm version](https://img.shields.io/npm/v/ioserver.svg)](https://www.npmjs.org/package/ioserver)
 [![Build Status](https://travis-ci.org/x42en/IOServer.svg?branch=master)](https://travis-ci.org/x42en/IOServer)
-[![Dependencies](https://david-dm.org/x42en/ioserver.svg)](https://www.npmjs.org/package/ioserver)
 [![Known Vulnerabilities](https://snyk.io/test/github/x42en/ioserver/badge.svg)](https://snyk.io/test/github/x42en/ioserver)
 
 
