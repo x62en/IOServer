@@ -53,6 +53,17 @@ Start the server...
 
 ## Extended usage
 
+You can add services with Middlewares:
+  ```coffeescript
+    app.addService
+      name:      'service_name'
+      service:   ServiceClass
+      middlewares: [
+        AccessMiddleware
+      ]
+  ```
+Middlewares are invoked at the socket connection to namespaces, they are usually used for restricting access, validate connection method and parameters.  
+
 You can also interact directly with a method in specific namespace using:
   ```coffeescript
     app.interact
@@ -111,6 +122,13 @@ Or send to a specific user id
         console.log "Someone say: #{text}."
         socket.broadcast.emit 'message', text
 
+      # Synchronous event are supported
+      sync_replay: (socket, text, callback) ->
+        console.log "Someone say: #{text}."
+        callback text
+
+      # All methods starting with '_' are meant private
+      # and will not be published
       _notAccessible: (socket) ->
         console.error "You should not be here !!"
   ```
@@ -152,10 +170,18 @@ Or send to a specific user id
     $('button.send').on 'click', ->
       msg = $('input[name="message"]').val()
       socket.emit 'replay', msg
+    
+    # You can also use callback for synchronous actions
+    $('button.send').on 'click', ->
+      msg = $('input[name="message"]').val()
+      socket.emit 'sync_replay', msg, (data) ->
+        $('.message_list').append "<div class='message'>#{data}</div>"
 
   ```
+For further case study you can also check de demo Chat application...  
+(link provided in few ~~days~~ weeks ;) )
 
-## Developement
+## Developers
 
 If you want to contribute to this project you are more than welcome !  
 
@@ -173,3 +199,7 @@ Use coffeescript to compile your work
 coffee -wc ./test
 coffee --no-header -wc *.coffee
 ```
+## TODO
+* write better doc
+* publish chat demo example
+* improve unit tests for complete coverage (HTTPS / restricted method / interact function)
