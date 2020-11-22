@@ -1,10 +1,10 @@
 {
   "name": "ioserver",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Damn simple IOServer instance, allowing developpers to add services as simple coffeescript class.",
-  "main": "ioserver.js",
+  "main": "dist/ioserver.js",
   "files": [
-    "./ioserver.js"
+    "dist/"
   ],
   "dependencies": {
     "colors": "^1.4.0",
@@ -19,7 +19,6 @@
     "socket.io-client": "^3.0.3"
   },
   "scripts": {
-    "demo": "node demo/server/server.js",
     "test": "mocha --exit",
     "snyk-protect": "snyk protect",
     "prepublish": "npm run snyk-protect"

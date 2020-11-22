@@ -5,7 +5,6 @@
 [![Downloads per month](https://img.shields.io/npm/dm/ioserver.svg?maxAge=2592000)](https://www.npmjs.org/package/ioserver)
 [![npm version](https://img.shields.io/npm/v/ioserver.svg)](https://www.npmjs.org/package/ioserver)
 [![Build Status](https://travis-ci.org/x42en/IOServer.svg?branch=master)](https://travis-ci.org/x42en/IOServer)
-[![Dependencies](https://david-dm.org/x42en/ioserver.svg)](https://www.npmjs.org/package/ioserver)
 [![Known Vulnerabilities](https://snyk.io/test/github/x42en/ioserver/badge.svg)](https://snyk.io/test/github/x42en/ioserver)
 
 
@@ -53,6 +52,17 @@ Start the server...
 
 
 ## Extended usage
+
+You can add services with Middlewares:
+  ```coffeescript
+    app.addService
+      name:      'service_name'
+      service:   ServiceClass
+      middlewares: [
+        AccessMiddleware
+      ]
+  ```
+Middlewares are invoked at the socket connection to namespaces, they are usually used for restricting access, validate connection method and parameters.  
 
 You can also interact directly with a method in specific namespace using:
   ```coffeescript
@@ -112,6 +122,13 @@ Or send to a specific user id
         console.log "Someone say: #{text}."
         socket.broadcast.emit 'message', text
 
+      # Synchronous event are supported
+      sync_replay: (socket, text, callback) ->
+        console.log "Someone say: #{text}."
+        callback text
+
+      # All methods starting with '_' are meant private
+      # and will not be published
       _notAccessible: (socket) ->
         console.error "You should not be here !!"
   ```
@@ -153,10 +170,18 @@ Or send to a specific user id
     $('button.send').on 'click', ->
       msg = $('input[name="message"]').val()
       socket.emit 'replay', msg
+    
+    # You can also use callback for synchronous actions
+    $('button.send').on 'click', ->
+      msg = $('input[name="message"]').val()
+      socket.emit 'sync_replay', msg, (data) ->
+        $('.message_list').append "<div class='message'>#{data}</div>"
 
   ```
+For further case study you can also check de demo Chat application...  
+(link provided in few ~~days~~ weeks ;) )
 
-## Developement
+## Developers
 
 If you want to contribute to this project you are more than welcome !  
 
@@ -169,8 +194,17 @@ npm test
 
 ### Compilation
 
-Use coffeescript to compile your work
+Use coffeescript to compile your tests
 ```bash
 coffee -wc ./test
-coffee --no-header -wc *.coffee
 ```
+
+Use coffeescript to compile your changes in IOServer
+```bash
+coffee --no-header coffee -w --output dist/ --compile src/
+```
+
+## TODO
+* write better doc
+* publish chat demo example
+* improve unit tests for complete coverage (HTTPS / restricted method / interact function)
