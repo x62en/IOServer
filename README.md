@@ -204,6 +204,10 @@ Use coffeescript to compile your changes in IOServer
 coffee --no-header coffee -w --output dist/ --compile src/
 ```
 
+### Publish
+
+The NPM publishing is automated, just commit (or better merge) into master with comment 'Release v1.0.x' in order to publish corresponding package in NPM.
+
 ## TODO
 * write better doc
 * publish chat demo example
