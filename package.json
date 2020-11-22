@@ -27,6 +27,9 @@
     "type": "git",
     "url": "https://github.com/x42en/IOServer.git"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "keywords": [
     "socket.io",
     "coffeescript",
