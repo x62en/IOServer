@@ -18,9 +18,6 @@ These registrated methods will then be accessible as standard client-side socket
 ```
 **Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**
 
-You can also use Fiberized functions inside your methods, but **NOT IN CONSTRUCTORS !**
-
-
 ## Install
 
 Install with npm:
@@ -35,11 +32,18 @@ Require the module:
     app = require 'ioserver'
   ```
 
+Add manager using:
+  ```coffeescript
+    app.addManager
+      name:      'manager_name'
+      manager:   ManagerClass
+  ```
+
 Add services using:
   ```coffeescript
     app.addService
       name:      'service_name'
-      service:   Service_Class
+      service:   ServiceClass
   ```
 
 Start the server...
@@ -63,22 +67,34 @@ Common options are:
     app = require 'ioserver'
       port:     8443                         # change listening port
       host:     '192.168.1.10'               # change listening host
-      mode:     'websocket'                  # Set socket.io client support transport
+      mode:     ['websocket']                # Set socket.io client support transport
                                              #   default is ['websocket','polling']
                                              #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
-      verbose:  'INFOS'                      # set verbosity level
+      verbose:  'DEBUG'                      # set verbosity level
       share:    '/path/to/share'             # useful for letsencrypt compatibility
       secure:   true                         # enable SSL listening
       ssl_ca:   '/path/to/ca/certificates'
       ssl_key:  '/path/to/server/key'
       ssl_cert: '/path/to/server/certificate'
 
+      core: {
+        origin: 'http://mydomain.com'
+        methods: ['GET','POST']
+      }
   ```
 You can interact in a particular room of a service
   ```coffeescript
     app.interact
       service:  'service_name'
       room:     'room_name'
+      method:   'method_name'
+      data:     data
+  ```
+
+Or send to a specific user id
+  ```coffeescript
+    app.interact
+      service:  'service_name'
       method:   'method_name'
       sid:      'specific_sid'
       data:     data
@@ -90,7 +106,7 @@ You can interact in a particular room of a service
   ```coffeescript
     module.exports = class SingleChat
       
-      constructor: () ->
+      constructor: (@app) ->
       
       replay: (socket, text) ->
         console.log "Someone say: #{text}."
@@ -105,7 +121,7 @@ You can interact in a particular room of a service
     IOServer      = require 'ioserver'
     ChatService = require './singleChat'
 
-    app = new IOServer {}
+    app = new IOServer()
 
     app.addService
       name:  'chat'
@@ -140,7 +156,21 @@ You can interact in a particular room of a service
 
   ```
 
-## TODO
+## Developement
 
-> 1. write unit tests
-> 2. set user identification (?)
+If you want to contribute to this project you are more than welcome !  
+
+### Run tests
+```bash
+npm test
+```
+
+**Please use Coffeescript for development language**  
+
+### Compilation
+
+Use coffeescript to compile your work
+```bash
+coffee -wc ./test
+coffee --no-header -wc *.coffee
+```
