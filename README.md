@@ -194,11 +194,16 @@ npm test
 
 ### Compilation
 
-Use coffeescript to compile your work
+Use coffeescript to compile your tests
 ```bash
 coffee -wc ./test
-coffee --no-header -wc *.coffee
 ```
+
+Use coffeescript to compile your changes in IOServer
+```bash
+coffee --no-header coffee -w --output dist/ --compile src/
+```
+
 ## TODO
 * write better doc
 * publish chat demo example
