@@ -73,9 +73,6 @@ Common options are:
       ssl_key:  '/path/to/server/key'
       ssl_cert: '/path/to/server/certificate'
 
-      # TODO: 
-      #login: 'test'                          # set login in all query based on socketID?
-
   ```
 You can interact in a particular room of a service
   ```coffeescript
@@ -83,6 +80,7 @@ You can interact in a particular room of a service
       service:  'service_name'
       room:     'room_name'
       method:   'method_name'
+      sid:      'specific_sid'
       data:     data
   ```
 

@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v0.3.3                        #
+  //         IOServer - v0.3.4                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -23,10 +23,14 @@
   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   // See the License for the specific language governing permissions and
   // limitations under the License.
-  var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, crypto, fs, http, https,
+  var CONFIG, Fiber, HOST, IOServer, LOG_LEVEL, PORT, Server, TRANSPORTS, crypto, fs, http, https, path, url,
     indexOf = [].indexOf;
 
   fs = require('fs');
+
+  url = require('url');
+
+  path = require('path');
 
   Server = require('socket.io');
 
@@ -50,7 +54,7 @@
 
   module.exports = IOServer = class IOServer {
     // Define the variables used by the server
-    constructor({host, port, login, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) {
+    constructor({host, port, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode, middleware}) {
       var e, i, m, ref, ref1, ref2;
       // Allow your small server to share some stuff
       this._handler = this._handler.bind(this);
@@ -62,7 +66,6 @@
         throw new Error('Invalid port.');
       }
       this.share = share ? String(share) : null;
-      this.login = login ? String(login) : null;
       this.cookie = cookie ? Boolean(cookie) : false;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
       
@@ -83,6 +86,7 @@
         this.mode.push('websocket');
         this.mode.push('polling');
       }
+      this.middleware = typeof middleware === 'function' ? middleware : null;
       this.secure = secure ? Boolean(secure) : false;
       if (this.secure) {
         this.ssl_ca = ssl_ca ? String(ssl_ca) : null;
@@ -109,7 +113,11 @@
           }
         }
         // list methods of object... it will be the list of io actions
-        return this.method_list[name] = this._dumpMethods(service);
+        this.method_list[name] = this._dumpMethods(service);
+        // Auto-add middleware if set
+        if (indexOf.call(this.method_list[name], '__middleware') >= 0) {
+          return this.middleware = this.method_list[name]['__middleware'];
+        }
       } else {
         return this._logify(3, "#[!] Service name MUST be longer than 2 characters");
       }
@@ -120,54 +128,69 @@
       return this.service_list[name];
     }
 
-    _generateAcceptValue(acceptKey) {
-      return crypto.createHash('sha1').update(acceptKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', 'binary').digest('base64');
-    }
+    _generateAcceptValue(acceptKey) {}
 
     _handler(req, res) {
-      var file, files, j, len, readStream, results;
-      if (req.headers['upgrade'] !== 'websocket') {
-        if (this.share) {
-          files = fs.readdirSync(this.share);
-          res.writeHead(200);
-          if (!(files.length > 0)) {
-            res.end('Shared path empty.');
+      var contentTypesByExtension, filename, headers, uri;
+      if (this.share) {
+        uri = url.parse(req.url).pathname;
+        filename = path.join(this.share, uri);
+        contentTypesByExtension = {
+          '.html': "text/html; charset=utf-8",
+          '.css': "text/css; charset=utf-8",
+          '.js': "application/javascript; charset=utf-8",
+          '.png': "image/png"
+        };
+        headers = {
+          "Server": "IOServer",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff"
+        };
+        // Check file existence
+        return fs.exists(filename, (exists) => {
+          if (!exists) {
+            res.writeHead(404, headers);
+            res.write("404 Not Found\n");
+            res.end();
+            return;
           }
-          results = [];
-          for (j = 0, len = files.length; j < len; j++) {
-            file = files[j];
-            readStream = fs.createReadStream(`${this.share}/${file}`);
-            readStream.on('open', function() {
-              return readStream.pipe(res);
-            });
-            readStream.on('error', function(err) {
-              res.writeHead(500);
-              return res.end(err);
-            });
-            break;
+          
+          // If file is directory search for index.html
+          if (fs.statSync(filename).isDirectory()) {
+            filename = `${filename}/index.html`;
           }
-          return results;
-        } else {
-          res.writeHead(200);
-          return res.end('Nothing shared.');
-        }
+          
+          // Prevent directory listing
+          fs.exists(filename, function(exists) {
+            if (!exists) {
+              res.writeHead(403, headers);
+              res.write("403 Forbidden\n");
+              res.end();
+            }
+          });
+          return fs.readFile(filename, "binary", (err, file) => {
+            var contentType;
+            if (err) {
+              res.writeHead(500, headers);
+              res.write(`${err}\n`);
+              res.end();
+            }
+            contentType = contentTypesByExtension[path.extname(filename)];
+            if (contentType) {
+              headers["Content-Type"] = contentType;
+            }
+            res.writeHead(200, headers);
+            res.write(file, 'binary');
+            return res.end();
+          });
+        });
+      } else {
+        res.writeHead(200);
+        return res.end('Nothing shared.');
       }
     }
 
-    // else
-    //     # Read the websocket key provided by the client: 
-    //     acceptKey = req.headers['sec-websocket-key']; 
-    //     # Generate the response value to use in the response: 
-    //     hash = @_generateAcceptValue(acceptKey); 
-    //     # Write the HTTP response into an array of response lines: 
-    //     responseHeaders = [ 'HTTP/1.1 101 Web Socket Protocol Handshake', 'Upgrade: WebSocket', 'Connection: Upgrade', 'Sec-WebSocket-Accept': hash ]; 
-    //     # Write the response back to the client socket, being sure to append two 
-    //     # additional newlines so that the browser recognises the end of the response 
-    //     # header and doesn't continue to wait for more header data:
-    //     res.writeHead 200
-    //     res.write responseHeaders.join('\r\n') + '\r\n\r\n'
-
-      // Launch socket IO and get ready to handle events on connection
+    // Launch socket IO and get ready to handle events on connection
     start() {
       var app, d, day, hours, minutes, month, ns, ref, seconds, server, service, service_name;
       d = new Date();
@@ -201,17 +224,18 @@
       // Register each different services by its namespace
       for (service_name in ref) {
         service = ref[service_name];
-        if (this.login) {
-          ns[service_name] = this.io.of(`/${this.login}/${service_name}`);
-        } else {
-          ns[service_name] = this.io.of(`/${service_name}`);
+        ns[service_name] = this.io.of(`/${service_name}`);
+        // Create basic middleware for understanding purpose
+        if (typeof this.middleware !== 'function') {
+          this.middleware = (socket, next) => {
+            return next();
+          };
         }
+        
         // Ensure namespace conditions are met
-        ns[service_name].use((socket, next) => {
-          return next();
-        });
+        ns[service_name].use(this.middleware);
         // get ready for connection
-        ns[service_name].use(this._handleEvents(ns[service_name], service_name));
+        ns[service_name].on("connection", this._handleEvents(ns[service_name], service_name));
         this._logify(6, `[*] service ${service_name} registered...`);
       }
       if (this.channel_list && this.channel_list.length > 0) {
@@ -221,11 +245,16 @@
     }
 
     // Allow sending message of specific service from external method
-    interact({service, room, method, data} = {}) {
+    interact({service, room, method, sid = null, data} = {}) {
       var ns, sockets;
       ns = this.io.of(service || "/");
+      // Restrict access to clients in room if set
       sockets = room ? ns.in(room) : ns;
-      return sockets.emit(method, data);
+      if (sid) {
+        return sockets.sockets.get(sid).emit(method, data);
+      } else {
+        return sockets.emit(method, data);
+      }
     }
 
     // Once a client is connected, get ready to handle his events
@@ -246,13 +275,12 @@
             continue;
           }
           this._logify(6, `[*] method ${action} of ${service_name} listening...`);
-          socket.on(action, this._handleCallback({
+          results.push(socket.on(action, this._handleCallback({
             service: service_name,
             method: action,
             socket: socket,
             namespace: ns
-          }));
-          results.push(next());
+          })));
         }
         return results;
       };

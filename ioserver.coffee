@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v0.3.3                        #
+#         IOServer - v0.3.4                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -24,6 +24,8 @@
 # limitations under the License.
 
 fs     = require 'fs'
+url    = require 'url'
+path   = require 'path'
 Server = require 'socket.io'
 http   = require 'http'
 https  = require 'https'
@@ -38,7 +40,7 @@ TRANSPORTS = ['websocket','htmlfile','xhr-polling','jsonp-polling']
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({host, port, login, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode}) ->
+    constructor: ({host, port, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode, middleware}) ->
         @host = if host then String(host) else HOST
         try
             @port = if port then Number(port) else PORT
@@ -46,7 +48,6 @@ module.exports = class IOServer
             throw new Error 'Invalid port.'
         
         @share = if share then String(share) else null
-        @login = if login then String(login) else null
         @cookie = if cookie then Boolean(cookie) else false
         @verbose = if String(verbose).toUpperCase() in LOG_LEVEL then String(verbose).toUpperCase() else 'ERROR'
         
@@ -62,6 +63,8 @@ module.exports = class IOServer
         else
             @mode.push 'websocket'
             @mode.push 'polling'
+        
+        @middleware = if typeof(middleware) is 'function' then middleware else null
         
         @secure = if secure then Boolean(secure) else false
         if @secure
@@ -86,6 +89,9 @@ module.exports = class IOServer
 
             # list methods of object... it will be the list of io actions
             @method_list[name] = @_dumpMethods service
+            # Auto-add middleware if set
+            if '__middleware' in @method_list[name]
+                @middleware = @method_list[name]['__middleware']
         else
             @_logify 3 ,"#[!] Service name MUST be longer than 2 characters"
 
@@ -93,46 +99,64 @@ module.exports = class IOServer
     getInstance: (name) -> @service_list[name]
 
     _generateAcceptValue: (acceptKey) ->
-        return crypto
-        .createHash('sha1')
-        .update(acceptKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', 'binary')
-        .digest('base64')
 
     # Allow your small server to share some stuff
     _handler: (req, res) =>
-        if req.headers['upgrade'] isnt 'websocket'
-            if @share
-                files = fs.readdirSync @share
-                res.writeHead 200
+        if @share
+            uri = url.parse(req.url).pathname
+            filename = path.join(@share, uri)
+
+            contentTypesByExtension = {
+                '.html': "text/html; charset=utf-8"
+                '.css':  "text/css; charset=utf-8"
+                '.js':   "application/javascript; charset=utf-8"
+                '.png':  "image/png"
+            }
+
+            headers = {
+                "Server": "IOServer"
+                "Content-Type": "text/plain; charset=utf-8"
+                "X-Content-Type-Options": "nosniff"
+            }
+
+            # Check file existence
+            fs.exists filename, (exists) =>
+                if not exists
+                    res.writeHead 404, headers
+                    res.write "404 Not Found\n"
+                    res.end()
+                    return
                 
-                unless files.length > 0
-                    res.end 'Shared path empty.'
+                # If file is directory search for index.html
+                if fs.statSync(filename).isDirectory()
+                    filename = "#{filename}/index.html"
                 
-                for file in files
-                    readStream = fs.createReadStream("#{@share}/#{file}")
-                    readStream.on 'open', () ->
-                        readStream.pipe(res)
-                    readStream.on 'error', (err) ->
-                        res.writeHead 500
-                        res.end err
-                    break
+                # Prevent directory listing
+                fs.exists filename, (exists) ->
+                    if not exists
+                        res.writeHead 403, headers
+                        res.write "403 Forbidden\n"
+                        res.end()
+                        return
                 
-            else
-                res.writeHead 200
-                res.end 'Nothing shared.'
-        # else
-        #     # Read the websocket key provided by the client: 
-        #     acceptKey = req.headers['sec-websocket-key']; 
-        #     # Generate the response value to use in the response: 
-        #     hash = @_generateAcceptValue(acceptKey); 
-        #     # Write the HTTP response into an array of response lines: 
-        #     responseHeaders = [ 'HTTP/1.1 101 Web Socket Protocol Handshake', 'Upgrade: WebSocket', 'Connection: Upgrade', 'Sec-WebSocket-Accept': hash ]; 
-        #     # Write the response back to the client socket, being sure to append two 
-        #     # additional newlines so that the browser recognises the end of the response 
-        #     # header and doesn't continue to wait for more header data:
-        #     res.writeHead 200
-        #     res.write responseHeaders.join('\r\n') + '\r\n\r\n'
-            
+                fs.readFile filename, "binary", (err, file) =>
+                    if err
+                        res.writeHead 500, headers
+                        res.write "#{err}\n"
+                        res.end()
+                    
+                    contentType = contentTypesByExtension[path.extname(filename)]
+                    
+                    if contentType
+                        headers["Content-Type"] = contentType
+                    
+                    res.writeHead 200, headers
+                    res.write file, 'binary'
+                    res.end()
+        else
+            res.writeHead 200
+            res.end 'Nothing shared.'
+
     # Launch socket IO and get ready to handle events on connection
     start: () ->
         d = new Date()
@@ -164,17 +188,18 @@ module.exports = class IOServer
 
         # Register each different services by its namespace
         for service_name, service of @service_list
-            if @login
-                ns[service_name] = @io.of "/#{@login}/#{service_name}"
-            else
-                ns[service_name] = @io.of "/#{service_name}"
+            ns[service_name] = @io.of "/#{service_name}"
 
+            # Create basic middleware for understanding purpose
+            if typeof(@middleware) isnt 'function'
+                @middleware = (socket, next) =>
+                    next()
+            
             # Ensure namespace conditions are met
-            ns[service_name].use (socket, next) =>
-                next()
+            ns[service_name].use @middleware
 
             # get ready for connection
-            ns[service_name].use @_handleEvents(ns[service_name], service_name)
+            ns[service_name].on "connection", @_handleEvents(ns[service_name], service_name)
             @_logify 6, "[*] service #{service_name} registered..."
 
         if @channel_list and @channel_list.length > 0
@@ -183,10 +208,14 @@ module.exports = class IOServer
 
 
     # Allow sending message of specific service from external method
-    interact: ({service, room, method, data}={}) ->
+    interact: ({service, room, method, sid=null, data}={}) ->
         ns = @io.of(service ||"/")
+        # Restrict access to clients in room if set
         sockets = if room then ns.in(room) else ns
-        sockets.emit method, data
+        if sid
+            sockets.sockets.get(sid).emit method, data
+        else
+            sockets.emit method, data
 
     # Once a client is connected, get ready to handle his events
     _handleEvents: (ns, service_name) ->
@@ -205,7 +234,6 @@ module.exports = class IOServer
                                     method: action
                                     socket: socket
                                     namespace: ns
-                next()
 
     # On a specific event call the appropriate method of object
     _handleCallback: ({service, method, socket, namespace}) ->
