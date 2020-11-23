@@ -41,8 +41,11 @@ jobs:
           ref: master
 
       - name: Check version changes
-        uses: EndBug/version-check@v1
+        uses: EndBug/version-check@master
         id: check
+        with:
+          file-url: https://unpkg.com/ioserver@latest/package.json
+          static-checking: localIsNew
 
       - name: Version update detected
         if: steps.check.outputs.changed == 'true'
@@ -50,7 +53,7 @@ jobs:
 
       - name: Set up Node.js for NPM
         if: steps.check.outputs.changed == 'true'
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@master
         with:
           registry-url: "https://registry.npmjs.org"
           scope: "@x62en"
@@ -67,12 +70,12 @@ jobs:
 
       - name: Set up Node.js for GPR
         if: steps.check.outputs.changed == 'true'
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@master
         with:
           registry-url: "https://npm.pkg.github.com/"
           scope: "@x42en"
 
-      - name: Set up package for GPR # You need to make sure you package name has the scope needed for GPR
+      - name: Set up package for GPR
         if: steps.check.outputs.changed == 'true'
         run: npm run gpr-setup
 
