@@ -7,7 +7,7 @@
 
   socketio_client = require('socket.io-client');
 
-  IOServer = require('../ioserver');
+  IOServer = require('../dist/ioserver');
 
   // Import Applications entities
   SessionManager = require('./managers/sessionManager');

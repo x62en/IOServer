@@ -32,7 +32,7 @@ closer = require 'http-terminator'
 
 crypto = require 'crypto'
 
-CONFIG     = require './package.json'
+CONFIG     = require '../package.json'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
