@@ -201,7 +201,7 @@ coffee -wc ./test
 
 Use coffeescript to compile your changes in IOServer
 ```bash
-coffee --no-header coffee -w --output dist/ --compile src/
+coffee --no-header -w --output dist/ --compile src/
 ```
 
 ### Publish
