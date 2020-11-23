@@ -77,18 +77,25 @@ Common options are:
     app = require 'ioserver'
       port:     8443                         # change listening port
       host:     '192.168.1.10'               # change listening host
-      mode:     ['websocket']                # Set socket.io client support transport
-                                             #   default is ['websocket','polling']
-                                             #   available methods are ['websocket','htmlfile','polling','jsonp-polling']
+      mode:     ['websocket']                # Set socket.io client
+                                             # transport modes
+                                             # default is:
+                                             #  ['websocket','polling']
+                                             # available methods are:
+                                             #  ['websocket','htmlfile','polling','jsonp-polling']
       verbose:  'DEBUG'                      # set verbosity level
-      share:    '/path/to/share'             # useful for letsencrypt compatibility
+      share:    '/path/to/share'             # useful for:
+                                             #  - letsencrypt compatibility
+                                             #  - small server serving
       secure:   true                         # enable SSL listening
       ssl_ca:   '/path/to/ca/certificates'
       ssl_key:  '/path/to/server/key'
       ssl_cert: '/path/to/server/certificate'
+      cookies: false                         # Enable cookie usage for
+                                             # Socket.io v3
 
-      core: {
-        origin: 'http://mydomain.com'
+      cors: {                                # Set up CORS as requested
+        origin: 'http://mydomain.com'        # in Socket.io v3
         methods: ['GET','POST']
       }
   ```
