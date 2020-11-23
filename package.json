@@ -22,14 +22,15 @@
     "build": "./node_modules/coffeescript/bin/coffee --no-header --output dist/ --compile src/",
     "test": "mocha --exit",
     "snyk-protect": "snyk protect",
-    "prepublish": "npm run snyk-protect"
+    "prepublish": "npm run snyk-protect",
+    "gpr-setup": "node scripts/gpr.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/x42en/IOServer.git"
+    "url": "git+https://github.com/x42en/IOServer.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org"
   },
   "keywords": [
     "socket.io",
@@ -44,7 +45,7 @@
   "bugs": {
     "url": "https://github.com/x42en/IOServer/issues"
   },
-  "homepage": "https://github.com/x42en/IOServer",
+  "homepage": "https://github.com/x42en/IOServer#readme",
   "optionalDependencies": {},
   "snyk": true
 }
