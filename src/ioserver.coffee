@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.0.1                        #
+#         IOServer - v1.0.3                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -32,7 +32,7 @@ closer = require 'http-terminator'
 
 crypto = require 'crypto'
 
-CONFIG     = require '../package.json'
+VERSION    = '1.0.3'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
@@ -204,7 +204,7 @@ module.exports = class IOServer
         hours = if d.getHours() < 10 then "0#{d.getHours()}" else d.getHours()
         minutes = if d.getMinutes() < 10 then "0#{d.getMinutes()}" else d.getMinutes()
         seconds = if d.getSeconds() < 10 then "0#{d.getSeconds()}" else d.getSeconds()
-        @_logify 4, "################### IOServer v#{CONFIG.version} ###################"
+        @_logify 4, "################### IOServer v#{VERSION} ###################"
         @_logify 5, "################### #{day}/#{month}/#{d.getFullYear()} - #{hours}:#{minutes}:#{seconds} #########################"
 
         # If websocket and server must be secured

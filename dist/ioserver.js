@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.0.1                        #
+  //         IOServer - v1.0.3                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -23,7 +23,7 @@
   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   // See the License for the specific language governing permissions and
   // limitations under the License.
-  var CONFIG, HOST, IOServer, LOG_LEVEL, PORT, TRANSPORTS, closer, crypto, fs, http, https, path, url,
+  var HOST, IOServer, LOG_LEVEL, PORT, TRANSPORTS, VERSION, closer, crypto, fs, http, https, path, url,
     indexOf = [].indexOf;
 
   fs = require('fs');
@@ -40,7 +40,7 @@
 
   crypto = require('crypto');
 
-  CONFIG = require('../package.json');
+  VERSION = '1.0.3';
 
   PORT = 8080;
 
@@ -242,7 +242,7 @@
       hours = d.getHours() < 10 ? `0${d.getHours()}` : d.getHours();
       minutes = d.getMinutes() < 10 ? `0${d.getMinutes()}` : d.getMinutes();
       seconds = d.getSeconds() < 10 ? `0${d.getSeconds()}` : d.getSeconds();
-      this._logify(4, `################### IOServer v${CONFIG.version} ###################`);
+      this._logify(4, `################### IOServer v${VERSION} ###################`);
       this._logify(5, `################### ${day}/${month}/${d.getFullYear()} - ${hours}:${minutes}:${seconds} #########################`);
       // If websocket and server must be secured
       // with certificates
