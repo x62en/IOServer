@@ -19,6 +19,7 @@
     "socket.io-client": "^3.0.3"
   },
   "scripts": {
+    "build": "./node_modules/coffeescript/bin/coffee --no-header --output dist/ --compile src/",
     "test": "mocha --exit",
     "snyk-protect": "snyk protect",
     "prepublish": "npm run snyk-protect"
