@@ -15,7 +15,9 @@ These registrated methods will then be accessible as standard client-side socket
 ```coffeescript
   socket.emit 'method_name', data
 ```
-**Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**
+**Warning: Version 1.1.x changed 'interact' method to 'sendTo', and rename its arguments:**  
+**- service -> namespace**  
+**- method -> event**
 
 ## Install
 
@@ -99,13 +101,36 @@ Common options are:
         methods: ['GET','POST']
       }
   ```
-You can interact in a particular room of a service
+You can send event from external process
   ```coffeescript
-    app.interact
-      service:  'service_name'
-      room:     'room_name'
-      method:   'method_name'
+    app.sendTo
+      event:   'event name'
       data:     data
+  ```
+
+and to specific namespace ...
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      event:     'event name'
+      data:      data
+  ```
+
+... or even specific room
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      room:      'room_name'
+      event:     'event name'
+      data:      data
+  ```
+or even specific socket.id
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      sid:       socket.id
+      event:     'event name'
+      data:      data
   ```
 
 Or send to a specific user id

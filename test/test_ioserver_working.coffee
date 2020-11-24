@@ -10,6 +10,7 @@ PrivateMiddleware = require './middlewares/privateMiddleware'
 
 # Import socket.io event classes
 StandardService     = require './services/standardService'
+InteractService     = require './services/interactService'
 RegistrationService = require './services/registrationService'
 PrivateService      = require './services/privateService'
 
@@ -32,6 +33,11 @@ app.addManager
 # Add listening service on global namespace '/'
 app.addService
     service: StandardService
+
+# Add named listening service on '/interact'
+app.addService
+    name: 'interact'
+    service: InteractService
 
 # Add named listening service on '/registration'
 app.addService
@@ -130,6 +136,93 @@ describe "IOServer simple HTTP working tests", ->
     #         console.error data
     #         socket_client.disconnect()
     #         done()
+    
+    it 'Check interact event from external source to global', (done) ->
+        socket_client = socketio_client(end_point, opts)
+        socket_client.once 'external test', (data) ->
+            data.should.be.an 'object'
+            data.should.have.deep.property 'status'
+            data.should.have.deep.property 'msg'
+            
+            data.status.should.be.equal 'ok'
+            data.msg.should.be.equal 'Sent event to global from external'
+            
+            socket_client.disconnect()
+            done()
+        
+        # Give some times for socket to setup
+        setTimeout( ->
+            app.sendTo
+                event: 'external test'
+                data: { status: 'ok', msg: 'Sent event to global from external' }
+        , 20)
+    
+    it 'Check interact event from external source to namespace', (done) ->
+        socket_client = socketio_client("#{end_point}/interact", opts)
+        socket_client.once 'external test', (data) ->
+            data.should.be.an 'object'
+            data.should.have.deep.property 'status'
+            data.should.have.deep.property 'msg'
+            
+            data.status.should.be.equal 'ok'
+            data.msg.should.be.equal 'Sent event to /interact from external'
+            
+            socket_client.disconnect()
+            done()
+        
+        # Give some times for socket to setup
+        setTimeout( ->
+            app.sendTo
+                namespace: '/interact'
+                event: 'external test'
+                data: { status: 'ok', msg: 'Sent event to /interact from external' }
+        , 20)
+    
+    it 'Check interact event from external source to socket in room', (done) ->
+        socket_client = socketio_client("#{end_point}/interact", opts)
+        # Join room test
+        socket_client.emit 'restricted'
+        socket_client.once 'external test', (data) ->
+            data.should.be.an 'object'
+            data.should.have.deep.property 'status'
+            data.should.have.deep.property 'msg'
+            
+            data.status.should.be.equal 'ok'
+            data.msg.should.be.equal 'Sent event to /interact room test from external'
+            
+            socket_client.disconnect()
+            done()
+        
+        # Give some times for socket to setup
+        setTimeout( ->
+            app.sendTo
+                namespace: '/interact'
+                room: 'test'
+                event: 'external test'
+                data: { status: 'ok', msg: 'Sent event to /interact room test from external' }
+        , 20)
+    
+    it 'Check interact event from external source to socket ID ', (done) ->
+        socket_client = socketio_client("#{end_point}/interact", opts)
+        socket_client.once 'external test', (data) ->
+            data.should.be.an 'object'
+            data.should.have.deep.property 'status'
+            data.should.have.deep.property 'msg'
+            
+            data.status.should.be.equal 'ok'
+            data.msg.should.be.equal 'Sent event to socket.id from external'
+            
+            socket_client.disconnect()
+            done()
+        
+        # Give some times for socket to setup
+        setTimeout( =>
+            app.sendTo
+                namespace: '/interact'
+                sid: socket_client.id
+                event: 'external test'
+                data: { status: 'ok', msg: 'Sent event to socket.id from external' }
+        , 20)
     
     it 'Check registration method', (done) ->
         socket_client = socketio_client("#{end_point}/registration", opts)

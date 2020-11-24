@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.0.3                        #
+  //         IOServer - v1.1.0                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -109,7 +109,9 @@
       
       // Register the global app handle
       // that will be passed to all entities
-      this.appHandle = {};
+      this.appHandle = {
+        send: this.sendTo
+      };
     }
 
     addManager({name, manager}) {
@@ -119,6 +121,9 @@
       }
       if (name && name.length < 2) {
         throw "[!] Manager name MUST be longer than 2 characters";
+      }
+      if (name === 'send') {
+        throw "[!] Sorry this is a reserved name";
       }
       if (!(manager || manager.prototype)) {
         throw "[!] Manager MUST be a function";
@@ -307,17 +312,17 @@
       }
     }
 
-    // Allow sending message of specific service from external method
-    interact({service, method, data, room = false, sid = false} = {}) {
+    // Allow sending message from external app
+    sendTo({namespace, event, data, room = false, sid = false} = {}) {
       var ns, sockets;
-      ns = this.io.of(service || "/");
+      ns = this.io.of(namespace || "/");
       // Send event to specific sid if set
       if (sid) {
-        return sockets.sockets.get(sid).emit(method, data);
+        return ns.sockets.get(sid).emit(event, data);
       } else {
         // Restrict access to clients in room if set
         sockets = room ? ns.in(room) : ns;
-        return sockets.emit(method, data);
+        return sockets.emit(event, data);
       }
     }
 
@@ -422,3 +427,5 @@
   };
 
 }).call(this);
+
+//# sourceMappingURL=ioserver.js.map
