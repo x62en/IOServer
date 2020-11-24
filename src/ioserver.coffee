@@ -86,13 +86,15 @@ module.exports = class IOServer
         
         # Register the global app handle
         # that will be passed to all entities
-        @appHandle = {}
+        @appHandle = { send: @sendTo }
 
     addManager: ({name, manager}) ->
         if not name
             throw "[!] Manager name is mandatory"
         if name and name.length < 2
             throw "[!] Manager name MUST be longer than 2 characters"
+        if name in ['send']
+            throw "[!] Sorry this is a reserved name"
         
         if not (manager or manager.prototype)
             throw "[!] Manager MUST be a function"
@@ -257,16 +259,16 @@ module.exports = class IOServer
         if @stopper
             @stopper.terminate()
 
-    # Allow sending message of specific service from external method
-    interact: ({service, method, data, room=false, sid=false}={}) ->
-        ns = @io.of(service || "/")
+    # Allow sending message from external app
+    sendTo: ({namespace, event, data, room=false, sid=false}={}) ->
+        ns = @io.of(namespace || "/")
         # Send event to specific sid if set
         if sid
-            sockets.sockets.get(sid).emit method, data
+            ns.sockets.get(sid).emit event, data
         else
             # Restrict access to clients in room if set
             sockets = if room then ns.in(room) else ns
-            sockets.emit method, data
+            sockets.emit event, data
 
     # Once a client is connected, get ready to handle his events
     _handleEvents: (service_name) ->
