@@ -66,12 +66,36 @@ You can add services with Middlewares:
   ```
 Middlewares are invoked at the socket connection to namespaces, they are usually used for restricting access, validate connection method and parameters.  
 
-You can also interact directly with a method in specific namespace using:
+You can send event from external process
   ```coffeescript
-    app.interact
-      service:  'service_name'
-      method:   'method_name'
+    app.sendTo
+      event:   'event name'
       data:     data
+  ```
+
+to specific namespace ...
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      event:     'event name'
+      data:      data
+  ```
+
+... or specific room
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      room:      'room_name'
+      event:     'event name'
+      data:      data
+  ```
+and even specific socket.id
+  ```coffeescript
+    app.sendTo
+      namespace: '/namespace'
+      sid:       socket.id
+      event:     'event name'
+      data:      data
   ```
 
 Common options are:
@@ -100,46 +124,6 @@ Common options are:
         origin: 'http://mydomain.com'        # in Socket.io v3
         methods: ['GET','POST']
       }
-  ```
-You can send event from external process
-  ```coffeescript
-    app.sendTo
-      event:   'event name'
-      data:     data
-  ```
-
-and to specific namespace ...
-  ```coffeescript
-    app.sendTo
-      namespace: '/namespace'
-      event:     'event name'
-      data:      data
-  ```
-
-... or even specific room
-  ```coffeescript
-    app.sendTo
-      namespace: '/namespace'
-      room:      'room_name'
-      event:     'event name'
-      data:      data
-  ```
-or even specific socket.id
-  ```coffeescript
-    app.sendTo
-      namespace: '/namespace'
-      sid:       socket.id
-      event:     'event name'
-      data:      data
-  ```
-
-Or send to a specific user id
-  ```coffeescript
-    app.interact
-      service:  'service_name'
-      method:   'method_name'
-      sid:      'specific_sid'
-      data:     data
   ```
 
 ## Example
