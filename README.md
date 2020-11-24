@@ -15,7 +15,9 @@ These registrated methods will then be accessible as standard client-side socket
 ```coffeescript
   socket.emit 'method_name', data
 ```
-**Warning: Version 0.2.x switch parameters in server class, it was previously (data,socket), it is now (socket,data) in order to have some functions without anykind of data associated.**
+**Warning: Version 1.1.x changed 'interact' method to 'sendTo', and rename its arguments:**  
+**- service -> namespace**  
+**- method -> event**
 
 ## Install
 
