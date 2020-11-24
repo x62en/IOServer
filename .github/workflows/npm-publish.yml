@@ -54,13 +54,15 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         run: 'echo "Version change found! New version: ${{ steps.check.outputs.version }} (${{ steps.check.outputs.type }})"'
       
-      - name: Bump version and push tag
-        id: tag_version
+      - name: Push tag version
+        if: steps.check.outputs.changed == 'true'
         uses: mathieudutour/github-tag-action@v5
         with:
+          custom_tag: ${{ steps.check.outputs.version }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Create a GitHub release
+        if: steps.check.outputs.changed == 'true'
         uses: actions/create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
