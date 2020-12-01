@@ -6,16 +6,19 @@
   "files": [
     "build/"
   ],
+  "directories": {
+    "test": "test"
+  },
   "dependencies": {
     "colors": "^1.4.0",
     "http-terminator": "^2.0.3",
-    "snyk": "^1.426.0",
     "socket.io": "^3.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "coffeescript": "^2.5.1",
     "mocha": "^8.2.1",
+    "snyk": "^1.426.0",
     "socket.io-client": "^3.0.3"
   },
   "scripts": {
