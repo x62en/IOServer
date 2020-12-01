@@ -1,7 +1,7 @@
 # Import required packages
 should          = require('chai').should()
 socketio_client = require 'socket.io-client'
-IOServer        = require '../dist/ioserver'
+IOServer        = require '../build/ioserver'
 
 # Import Applications entities
 SessionManager    = require './managers/sessionManager'
