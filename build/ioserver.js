@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.1.0                        #
+  //         IOServer - v1.1.2                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -40,7 +40,7 @@
 
   crypto = require('crypto');
 
-  VERSION = '1.0.3';
+  VERSION = '1.1.1';
 
   PORT = 8080;
 
