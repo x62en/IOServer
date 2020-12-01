@@ -79,6 +79,10 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         run: npm install --only=prod
 
+      - name: Install snyk
+        if: steps.check.outputs.changed == 'true'
+        run: npm install snyk
+
       - name: Publish package to NPM
         if: steps.check.outputs.changed == 'true'
         run: npm publish
