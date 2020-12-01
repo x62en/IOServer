@@ -56,6 +56,8 @@
       var e, i, m, ref, ref1, ref2;
       // Allow your small server to share some stuff
       this._http_handler = this._http_handler.bind(this);
+      // Allow sending message from external app
+      this.sendTo = this.sendTo.bind(this);
       this.host = host ? String(host) : HOST;
       try {
         this.port = port ? Number(port) : PORT;
@@ -133,11 +135,7 @@
         return this.manager_list[name] = new manager(this.appHandle);
       } catch (error) {
         err = error;
-        if (`${err}`.substring('yield() called with no fiber running') !== -1) {
-          return console.error("[!] Error: you are NOT allowed to use fiberized function in constructor...");
-        } else {
-          return console.error(`[!] Error while instantiate ${name} -> ${err}`);
-        }
+        return console.error(`[!] Error while instantiate ${name} -> ${err}`);
       }
     }
 
@@ -313,16 +311,15 @@
       }
     }
 
-    // Allow sending message from external app
     sendTo({namespace, event, data, room = false, sid = false} = {}) {
       var ns, sockets;
       ns = this.io.of(namespace || "/");
       // Send event to specific sid if set
-      if (sid) {
+      if ((sid != null) && sid) {
         return ns.sockets.get(sid).emit(event, data);
       } else {
         // Restrict access to clients in room if set
-        sockets = room ? ns.in(room) : ns;
+        sockets = (room != null) && room ? ns.in(room) : ns;
         return sockets.emit(event, data);
       }
     }

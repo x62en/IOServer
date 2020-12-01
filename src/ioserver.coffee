@@ -103,10 +103,7 @@ module.exports = class IOServer
             # Register manager with handle reference
             @manager_list[name] = new manager(@appHandle)
         catch err
-            if "#{err}".substring('yield() called with no fiber running') isnt -1
-                console.error "[!] Error: you are NOT allowed to use fiberized function in constructor..."
-            else
-                console.error "[!] Error while instantiate #{name} -> #{err}"
+            console.error "[!] Error while instantiate #{name} -> #{err}"
 
     # Allow to register easily a class to this server
     # this class will be bind to a specific namespace
@@ -261,14 +258,14 @@ module.exports = class IOServer
             @stopper.terminate()
 
     # Allow sending message from external app
-    sendTo: ({namespace, event, data, room=false, sid=false}={}) ->
+    sendTo: ({namespace, event, data, room=false, sid=false}={}) =>
         ns = @io.of(namespace || "/")
         # Send event to specific sid if set
-        if sid
+        if sid? and sid
             ns.sockets.get(sid).emit event, data
         else
             # Restrict access to clients in room if set
-            sockets = if room then ns.in(room) else ns
+            sockets = if room? and room then ns.in(room) else ns
             sockets.emit event, data
 
     # Once a client is connected, get ready to handle his events
