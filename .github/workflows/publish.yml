@@ -1,8 +1,5 @@
-name: auto-publish
+name: publish
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
