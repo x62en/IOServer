@@ -15,9 +15,12 @@ These registrated methods will then be accessible as standard client-side socket
 ```coffeescript
   socket.emit 'method_name', data
 ```
+
+**Warning: Version 1.2.x removed embedded HTTP(S) server and then changed constructor arguments !!**  
+
 **Warning: Version 1.1.x changed 'interact' method to 'sendTo', and rename its arguments:**  
 **- service -> namespace**  
-**- method -> event**
+**- method -> event**  
 
 ## Install
 
@@ -110,13 +113,6 @@ Common options are:
                                              # available methods are:
                                              #  ['websocket','htmlfile','polling','jsonp-polling']
       verbose:  'DEBUG'                      # set verbosity level
-      share:    '/path/to/share'             # useful for:
-                                             #  - letsencrypt compatibility
-                                             #  - small server serving
-      secure:   true                         # enable SSL listening
-      ssl_ca:   '/path/to/ca/certificates'
-      ssl_key:  '/path/to/server/key'
-      ssl_cert: '/path/to/server/certificate'
       cookies: false                         # Enable cookie usage for
                                              # Socket.io v3
 
@@ -212,12 +208,12 @@ npm test
 
 Use coffeescript to compile your tests
 ```bash
-coffee -wc ./test
+coffee --no-header -wc ./test
 ```
 
 Use coffeescript to compile your changes in IOServer
 ```bash
-coffee --no-header -w --output dist/ --compile src/
+npm run build
 ```
 
 ### Publish
@@ -227,4 +223,4 @@ The NPM publishing is automated, just commit (or better merge) into master with 
 ## TODO
 * write better doc
 * publish chat demo example
-* improve unit tests for complete coverage (HTTPS / restricted method / interact function)
+* improve unit tests for complete coverage (restricted method)
