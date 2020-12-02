@@ -23,24 +23,17 @@
   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   // See the License for the specific language governing permissions and
   // limitations under the License.
-  var HOST, IOServer, LOG_LEVEL, PORT, TRANSPORTS, VERSION, closer, crypto, fs, http, https, path, url,
+
+  // Add required packages
+  var HOST, IOServer, LOG_LEVEL, PORT, TRANSPORTS, VERSION, closer, http,
     indexOf = [].indexOf;
-
-  fs = require('fs');
-
-  url = require('url');
-
-  path = require('path');
 
   http = require('http');
 
-  https = require('https');
-
   closer = require('http-terminator');
 
-  crypto = require('crypto');
-
-  VERSION = '1.1.1';
+  // Set global vars
+  VERSION = '1.1.2';
 
   PORT = 8080;
 
@@ -52,10 +45,8 @@
 
   module.exports = IOServer = class IOServer {
     // Define the variables used by the server
-    constructor({host, port, cookie, verbose, share, secure, ssl_ca, ssl_cert, ssl_key, mode, cors, middleware}) {
+    constructor({verbose, host, port, cookie, mode, cors, middleware}) {
       var e, i, m, ref, ref1, ref2;
-      // Allow your small server to share some stuff
-      this._http_handler = this._http_handler.bind(this);
       // Allow sending message from external app
       this.sendTo = this.sendTo.bind(this);
       this.host = host ? String(host) : HOST;
@@ -65,7 +56,6 @@
         e = error;
         throw new Error('Invalid port.');
       }
-      this.share = share ? String(share) : null;
       this.cookie = cookie ? Boolean(cookie) : false;
       this.verbose = (ref = String(verbose).toUpperCase(), indexOf.call(LOG_LEVEL, ref) >= 0) ? String(verbose).toUpperCase() : 'ERROR';
       
@@ -87,22 +77,18 @@
         this.mode.push('polling');
       }
       
-      // Setup correct config for web server
-      this.secure = secure ? Boolean(secure) : false;
-      if (this.secure) {
-        this.ssl_ca = ssl_ca ? String(ssl_ca) : null;
-        this.ssl_cert = ssl_cert ? String(ssl_cert) : null;
-        this.ssl_key = ssl_key ? String(ssl_key) : null;
-      }
       // Setup CORS since necessary in socket.io v3
       this.cors = cors && cors.prototype ? cors : {};
       if (!this.cors.methods) {
         this.cors.methods = ['GET', 'POST'];
       }
       if (!this.cors.origin) {
-        this.cors.origin = this.secure ? `https://${this.host}` : `http://${this.host}`;
+        // This is a BAD idea... insecure by default
+        this.cors.origin = '*';
       }
-      
+      // Find a way to detect if express is started in ssl mode
+      // @cors.origin = if @secure then "https://#{@host}" else "http://#{@host}"
+
       // Setup internal lists
       this.service_list = {};
       this.manager_list = {};
@@ -114,6 +100,35 @@
       this.appHandle = {
         send: this.sendTo
       };
+      this.server = null;
+    }
+
+    _logify(level, text) {
+      var current_level;
+      current_level = LOG_LEVEL.indexOf(this.verbose);
+      if (level <= current_level) {
+        if (level <= 4) {
+          return console.error(text);
+        } else {
+          return console.log(text);
+        }
+      }
+    }
+
+    _unique(arr) {
+      var hash, i, l, result;
+      hash = {};
+      result = [];
+      i = 0;
+      l = arr.length;
+      while (i < l) {
+        if (!hash.hasOwnProperty(arr[i])) {
+          hash[arr[i]] = true;
+          result.push(arr[i]);
+        }
+        ++i;
+      }
+      return result;
     }
 
     addManager({name, manager}) {
@@ -135,7 +150,7 @@
         return this.manager_list[name] = new manager(this.appHandle);
       } catch (error) {
         err = error;
-        return console.error(`[!] Error while instantiate ${name} -> ${err}`);
+        return this._logify(3, `[!] Error while instantiate ${name} -> ${err}`);
       }
     }
 
@@ -159,7 +174,7 @@
         this.service_list[name] = new service(this.appHandle);
       } catch (error) {
         err = error;
-        console.error(`[!] Error while instantiate ${name} -> ${err}`);
+        this._logify(3, `[!] Error while instantiate ${name} -> ${err}`);
       }
       // list methods of object... it will be the list of io actions
       this.method_list[name] = this._dumpMethods(service);
@@ -172,74 +187,14 @@
       return this.service_list[name];
     }
 
-    _http_handler(req, res) {
-      var content, contentType, contentTypesByExtension, err, filename, headers, uri;
-      if (!this.share) {
-        res.writeHead(200);
-        res.end('Nothing shared.');
-        return;
-      }
-      
-      // If a directory is shared
-      uri = url.parse(req.url).pathname;
-      filename = path.join(this.share, uri);
-      // Hard defined mime-type based on extension
-      contentTypesByExtension = {
-        '.html': "text/html; charset=utf-8",
-        '.css': "text/css; charset=utf-8",
-        '.js': "application/javascript; charset=utf-8",
-        '.svg': "image/svg+xml",
-        '.png': "image/png",
-        '.jpeg': "image/jpeg",
-        '.jpg': "image/jpeg"
-      };
-      // Set default headers
-      headers = {
-        "Server": "IOServer",
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Content-Type-Options": "nosniff"
-      };
-      // Check file existence
-      if (!fs.existsSync(filename)) {
-        res.writeHead(404, headers);
-        res.write("404 Not Found\n");
-        res.end();
-        return;
-      }
-      
-      // If file is directory search for index.html
-      if (fs.statSync(filename).isDirectory()) {
-        filename = `${filename}/index.html`;
-      }
-      
-      // Prevent directory listing
-      if (!fs.existsSync(filename)) {
-        res.writeHead(403, headers);
-        res.write("403 Forbidden\n");
-        res.end();
-        return;
-      }
-      try {
-        content = fs.readFileSync(filename, 'binary');
-      } catch (error) {
-        err = error;
-        res.writeHead(500, headers);
-        res.write(`${err}\n`);
-        res.end();
-        return;
-      }
-      contentType = contentTypesByExtension[path.extname(filename)];
-      if (contentType) {
-        headers["Content-Type"] = contentType;
-      }
-      res.writeHead(200, headers);
-      res.write(content, 'binary');
-      return res.end();
-    }
-
     // Launch socket IO and get ready to handle events on connection
-    start() {
-      var app, d, day, hours, j, len, manager, manager_name, mdwr, middleware, minutes, month, ns, ref, ref1, ref2, seconds, server, service, service_name;
+    // Pass web server used for connections
+    start(webapp) {
+      var d, day, hours, j, len, manager, manager_name, mdwr, middleware, minutes, month, ns, ref, ref1, ref2, seconds, server, service, service_name;
+      // If nothing set use standard module
+      if (webapp == null) {
+        webapp = http.createServer();
+      }
       d = new Date();
       day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
       month = d.getMonth() < 10 ? `0${d.getMonth()}` : d.getMonth();
@@ -248,22 +203,10 @@
       seconds = d.getSeconds() < 10 ? `0${d.getSeconds()}` : d.getSeconds();
       this._logify(4, `################### IOServer v${VERSION} ###################`);
       this._logify(5, `################### ${day}/${month}/${d.getFullYear()} - ${hours}:${minutes}:${seconds} #########################`);
-      // If websocket and server must be secured
-      // with certificates
-      if (this.secure) {
-        app = https.createServer({
-          key: fs.readFileSync(this.ssl_key),
-          cert: fs.readFileSync(this.ssl_cert),
-          ca: fs.readFileSync(this.ssl_ca)
-        }, this._http_handler);
-        this._logify(5, `[*] Starting server on https://${this.host}:${this.port} ...`);
-      } else {
-        app = http.createServer(this._http_handler);
-        this._logify(5, `[*] Starting server on http://${this.host}:${this.port} ...`);
-      }
-      // Start web server
-      server = app.listen(this.port, this.host);
       
+      // Start web server
+      this._logify(5, `[*] Starting server on https://${this.host}:${this.port} ...`);
+      server = webapp.listen(this.port, this.host);
       // Start socket.io listener
       this.io = require('socket.io')(server, {
         transports: this.mode,
@@ -303,9 +246,6 @@
       // Force server stop
     stop() {
       this._logify(6, "[*] Stopping server");
-      
-      // if @io
-      //     @io.close()
       if (this.stopper) {
         return this.stopper.terminate();
       }
@@ -392,34 +332,6 @@
         }
       }
       return this._unique(result).sort();
-    }
-
-    _unique(arr) {
-      var hash, i, l, result;
-      hash = {};
-      result = [];
-      i = 0;
-      l = arr.length;
-      while (i < l) {
-        if (!hash.hasOwnProperty(arr[i])) {
-          hash[arr[i]] = true;
-          result.push(arr[i]);
-        }
-        ++i;
-      }
-      return result;
-    }
-
-    _logify(level, text) {
-      var current_level;
-      current_level = LOG_LEVEL.indexOf(this.verbose);
-      if (level <= current_level) {
-        if (level <= 4) {
-          return console.error(text);
-        } else {
-          return console.log(text);
-        }
-      }
     }
 
   };
