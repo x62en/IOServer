@@ -1,6 +1,6 @@
 (function() {
   // During the test the env variable is set to test
-  var AccessMiddleware, HOST, IOServer, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, SimpleServer, StandardService, app, chai, end_point, opts, should, socketio_client;
+  var AccessMiddleware, HOST, IOServer, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, StandardService, app, chai, end_point, opts, should, socketio_client;
 
   process.env.NODE_ENV = 'test';
 
@@ -12,8 +12,6 @@
   socketio_client = require('socket.io-client');
 
   IOServer = require(`${__dirname}/../build/ioserver`);
-
-  SimpleServer = require(`${__dirname}/../build/simpleServer`);
 
   // Import Applications entities
   SessionManager = require(`${__dirname}/managers/sessionManager`);

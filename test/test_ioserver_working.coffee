@@ -7,7 +7,6 @@ should          = chai.should()
 
 socketio_client = require 'socket.io-client'
 IOServer        = require "#{__dirname}/../build/ioserver"
-SimpleServer    = require "#{__dirname}/../build/simpleServer"
 
 # Import Applications entities
 SessionManager    = require "#{__dirname}/managers/sessionManager"
