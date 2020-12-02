@@ -1,28 +1,33 @@
 (function() {
-  // Import required packages
-  var AccessMiddleware, HOST, IOServer, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, StandardService, app, end_point, opts, should, socketio_client;
+  // During the test the env variable is set to test
+  var AccessMiddleware, HOST, IOServer, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, StandardService, app, chai, end_point, opts, should, socketio_client;
 
-  should = require('chai').should();
+  process.env.NODE_ENV = 'test';
+
+  // Import required packages
+  chai = require('chai');
+
+  should = chai.should();
 
   socketio_client = require('socket.io-client');
 
-  IOServer = require('../build/ioserver');
+  IOServer = require(`${__dirname}/../build/ioserver`);
 
   // Import Applications entities
-  SessionManager = require('./managers/sessionManager');
+  SessionManager = require(`${__dirname}/managers/sessionManager`);
 
-  AccessMiddleware = require('./middlewares/accessMiddleware');
+  AccessMiddleware = require(`${__dirname}/middlewares/accessMiddleware`);
 
-  PrivateMiddleware = require('./middlewares/privateMiddleware');
+  PrivateMiddleware = require(`${__dirname}/middlewares/privateMiddleware`);
 
   // Import socket.io event classes
-  StandardService = require('./services/standardService');
+  StandardService = require(`${__dirname}/services/standardService`);
 
-  InteractService = require('./services/interactService');
+  InteractService = require(`${__dirname}/services/interactService`);
 
-  RegistrationService = require('./services/registrationService');
+  RegistrationService = require(`${__dirname}/services/registrationService`);
 
-  PrivateService = require('./services/privateService');
+  PrivateService = require(`${__dirname}/services/privateService`);
 
   // Setup global vars
   HOST = '127.0.0.1';

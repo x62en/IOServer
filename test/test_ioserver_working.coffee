@@ -1,18 +1,23 @@
+# During the test the env variable is set to test
+process.env.NODE_ENV = 'test'
+
 # Import required packages
-should          = require('chai').should()
+chai            = require 'chai'
+should          = chai.should()
+
 socketio_client = require 'socket.io-client'
-IOServer        = require '../build/ioserver'
+IOServer        = require "#{__dirname}/../build/ioserver"
 
 # Import Applications entities
-SessionManager    = require './managers/sessionManager'
-AccessMiddleware  = require './middlewares/accessMiddleware'
-PrivateMiddleware = require './middlewares/privateMiddleware'
+SessionManager    = require "#{__dirname}/managers/sessionManager"
+AccessMiddleware  = require "#{__dirname}/middlewares/accessMiddleware"
+PrivateMiddleware = require "#{__dirname}/middlewares/privateMiddleware"
 
 # Import socket.io event classes
-StandardService     = require './services/standardService'
-InteractService     = require './services/interactService'
-RegistrationService = require './services/registrationService'
-PrivateService      = require './services/privateService'
+StandardService     = require "#{__dirname}/services/standardService"
+InteractService     = require "#{__dirname}/services/interactService"
+RegistrationService = require "#{__dirname}/services/registrationService"
+PrivateService      = require "#{__dirname}/services/privateService"
 
 # Setup global vars
 HOST = '127.0.0.1'
@@ -62,7 +67,7 @@ describe "IOServer simple HTTP working tests", ->
 
     # Set global timeout
     @timeout 4000
-
+    
     before( () ->
         # Start server
         console.log "Start IOServer"
@@ -74,7 +79,7 @@ describe "IOServer simple HTTP working tests", ->
         console.log "Stop IOServer"
         app.stop()
     )
-    
+
     it 'Check public method', (done) ->
         socket_client = socketio_client(end_point, opts)
         socket_client.once 'answer', (data) ->
