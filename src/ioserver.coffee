@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.1.2                        #
+#         IOServer - v1.2.0                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -28,7 +28,7 @@ http   = require 'http'
 closer = require 'http-terminator'
 
 # Set global vars
-VERSION    = '1.1.2'
+VERSION    = '1.2.0'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']

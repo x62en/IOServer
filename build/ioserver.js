@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.1.2                        #
+  //         IOServer - v1.2.0                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -33,7 +33,7 @@
   closer = require('http-terminator');
 
   // Set global vars
-  VERSION = '1.1.2';
+  VERSION = '1.2.0';
 
   PORT = 8080;
 
@@ -83,12 +83,9 @@
         this.cors.methods = ['GET', 'POST'];
       }
       if (!this.cors.origin) {
-        // This is a BAD idea... insecure by default
-        this.cors.origin = '*';
+        this.cors.origin = [`https://${this.host}`, `http://${this.host}`];
       }
-      // Find a way to detect if express is started in ssl mode
-      // @cors.origin = if @secure then "https://#{@host}" else "http://#{@host}"
-
+      
       // Setup internal lists
       this.service_list = {};
       this.manager_list = {};
