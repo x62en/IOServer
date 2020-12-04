@@ -1,6 +1,6 @@
 (function() {
   // During the test the env variable is set to test
-  var AccessMiddleware, HOST, IOServer, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, StandardService, app, chai, end_point, opts, should, socketio_client;
+  var AccessMiddleware, HOST, IOServer, IOServerError, InteractService, PORT, PrivateMiddleware, PrivateService, RegistrationService, SessionManager, StandardService, app, chai, end_point, opts, should, socketio_client;
 
   process.env.NODE_ENV = 'test';
 
@@ -12,6 +12,8 @@
   socketio_client = require('socket.io-client');
 
   IOServer = require(`${__dirname}/../build/ioserver`);
+
+  ({IOServerError} = require(`${__dirname}/../build/ioserver`));
 
   // Import Applications entities
   SessionManager = require(`${__dirname}/managers/sessionManager`);
@@ -120,8 +122,10 @@
       var socket_client;
       socket_client = socketio_client(end_point, opts);
       socket_client.on('error', function(data) {
-        data.should.be.a('string');
-        data.should.be.equal('I can not run');
+        data.should.be.an('object');
+        data.type.should.be.equal('IOServerError');
+        data.message.should.be.equal('I can not run');
+        data.code.should.be.equal(-1);
         socket_client.disconnect();
         return done();
       });
@@ -131,9 +135,22 @@
       var socket_client;
       socket_client = socketio_client(end_point, opts);
       return socket_client.emit('errored', null, function(data) {
-        data.should.be.an('object');
-        data.should.have.deep.property('error');
-        data.error.should.be.equal('I can not run');
+        data.status.should.be.equal('error');
+        data.type.should.be.equal('IOServerError');
+        data.message.should.be.equal('I can not run');
+        data.code.should.be.equal(-1);
+        socket_client.disconnect();
+        return done();
+      });
+    });
+    it('Check public method error sync with custom code', function(done) {
+      var socket_client;
+      socket_client = socketio_client(end_point, opts);
+      return socket_client.emit('errored_typed', null, function(data) {
+        data.status.should.be.equal('error');
+        data.type.should.be.equal('IOServerError');
+        data.message.should.be.equal('Custom error message');
+        data.code.should.be.equal(3);
         socket_client.disconnect();
         return done();
       });
