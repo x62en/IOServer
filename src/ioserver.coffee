@@ -235,16 +235,26 @@ module.exports = class IOServer
 
     # On a specific event call the appropriate method of object
     _handleCallback: ({service, method, socket}) ->
-        (data, callback) =>
+        return (data, callback) =>
             @_logify 6, "[*] call method #{method} of service #{service}"
             try
                 @service_list[service][method] socket, data, callback
             catch err
+                if typeof err is 'string'
+                    err = new IOServerError(err, -1)
+
+                payload = { 
+                    status: 'error',
+                    type: err.constructor.name or 'Error',
+                    message: err.message or null,
+                    code: err.code or -1
+                }
+
                 @_logify 5, "Error on #{service}:#{method} execution: #{err}"
                 if callback
-                    callback { error: err }
+                    callback payload
                 else
-                    socket.emit 'error', err
+                    socket.emit 'error', payload
             
     # Based on Kri-ban solution
     # http://stackoverflow.com/questions/7445726/how-to-list-methods-of-inherited-classes-in-coffeescript-or-javascript
@@ -259,3 +269,26 @@ module.exports = class IOServer
             break if not Object.getPrototypeOf(k) # avoid listing Object properties
 
         return @_unique(result).sort()
+
+# IO Server error class
+module.exports.IOServerError = class IOServerError extends Error
+    constructor: (message, code = -1) ->
+        super(message)
+        @type = @constructor.name
+        @code = code
+    
+    getMessage: () ->
+        return @message
+    
+    getType: () ->
+        return @type
+    
+    getCode: () ->
+        return @code
+
+    toJson: () ->
+        return {
+            message: @message
+            type: @type
+            code: @code
+        }

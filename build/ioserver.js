@@ -25,7 +25,7 @@
   // limitations under the License.
 
   // Add required packages
-  var HOST, IOServer, LOG_LEVEL, PORT, TRANSPORTS, VERSION, closer, http,
+  var HOST, IOServer, IOServerError, LOG_LEVEL, PORT, TRANSPORTS, VERSION, closer, http,
     indexOf = [].indexOf;
 
   http = require('http');
@@ -296,19 +296,26 @@
     // On a specific event call the appropriate method of object
     _handleCallback({service, method, socket}) {
       return (data, callback) => {
-        var err;
+        var err, payload;
         this._logify(6, `[*] call method ${method} of service ${service}`);
         try {
           return this.service_list[service][method](socket, data, callback);
         } catch (error) {
           err = error;
+          if (typeof err === 'string') {
+            err = new IOServerError(err, -1);
+          }
+          payload = {
+            status: 'error',
+            type: err.constructor.name || 'Error',
+            message: err.message || null,
+            code: err.code || -1
+          };
           this._logify(5, `Error on ${service}:${method} execution: ${err}`);
           if (callback) {
-            return callback({
-              error: err
-            });
+            return callback(payload);
           } else {
-            return socket.emit('error', err);
+            return socket.emit('error', payload);
           }
         }
       };
@@ -331,6 +338,36 @@
         }
       }
       return this._unique(result).sort();
+    }
+
+  };
+
+  // IO Server error class
+  module.exports.IOServerError = IOServerError = class IOServerError extends Error {
+    constructor(message, code = -1) {
+      super(message);
+      this.type = this.constructor.name;
+      this.code = code;
+    }
+
+    getMessage() {
+      return this.message;
+    }
+
+    getType() {
+      return this.type;
+    }
+
+    getCode() {
+      return this.code;
+    }
+
+    toJson() {
+      return {
+        message: this.message,
+        type: this.type,
+        code: this.code
+      };
     }
 
   };
