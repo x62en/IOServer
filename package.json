@@ -22,8 +22,9 @@
     "socket.io-client": "^3.0.3"
   },
   "scripts": {
-    "build": "./node_modules/coffeescript/bin/coffee --no-header --map --output build/ --compile src/",
-    "test": "mocha --exit",
+    "dev": "$(npm bin)/coffee --no-header --map --watch --output build/ --compile src/",
+    "build": "$(npm bin)/coffee --no-header --map --output build/ --compile src/",
+    "test": "$(npm bin)/coffee --no-header -c ./test && mocha --exit",
     "snyk-protect": "snyk protect",
     "prepublish": "npm run snyk-protect",
     "gpr-setup": "node scripts/gpr.js"
