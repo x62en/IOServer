@@ -29,8 +29,8 @@
 
   PrivateService = require(`${__dirname}/services/privateService`);
 
-  // Setup global vars
-  HOST = '127.0.0.1';
+  // Setup client vars
+  HOST = 'localhost';
 
   PORT = 8080;
 
@@ -41,10 +41,7 @@
   };
 
   // Instanciate IOServer
-  app = new IOServer({
-    host: HOST,
-    port: PORT
-  });
+  app = new IOServer();
 
   // Add session manager used to access private namespace
   app.addManager({

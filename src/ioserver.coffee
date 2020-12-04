@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.2.0                        #
+#         IOServer - v1.2.1                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -28,7 +28,7 @@ http   = require 'http'
 closer = require 'http-terminator'
 
 # Set global vars
-VERSION    = '1.2.0'
+VERSION    = '1.2.1'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
@@ -36,7 +36,10 @@ TRANSPORTS = ['websocket','htmlfile','xhr-polling','jsonp-polling']
 
 module.exports = class IOServer
     # Define the variables used by the server
-    constructor: ({verbose, host, port, cookie, mode, cors, middleware}) ->
+    constructor: (options = {}) ->
+        # Set default options
+        {verbose, host, port, cookie, mode, cors, middleware} = options
+
         @host = if host then String(host) else HOST
         try
             @port = if port then Number(port) else PORT
@@ -60,7 +63,7 @@ module.exports = class IOServer
             @mode.push 'polling'
         
         # Setup CORS since necessary in socket.io v3
-        @cors = if cors and cors.prototype then cors else {}
+        @cors = if cors? and cors then cors else {}
         if not @cors.methods
             @cors.methods = ['GET','POST']
         if not @cors.origin
