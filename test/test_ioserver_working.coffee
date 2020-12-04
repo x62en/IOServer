@@ -19,16 +19,14 @@ InteractService     = require "#{__dirname}/services/interactService"
 RegistrationService = require "#{__dirname}/services/registrationService"
 PrivateService      = require "#{__dirname}/services/privateService"
 
-# Setup global vars
-HOST = '127.0.0.1'
+# Setup client vars
+HOST = 'localhost'
 PORT = 8080
 end_point = "http://#{HOST}:#{PORT}"
 opts = { forceNew: true }
 
 # Instanciate IOServer
-app = new IOServer
-        host: HOST
-        port: PORT
+app = new IOServer()
 
 # Add session manager used to access private namespace
 app.addManager

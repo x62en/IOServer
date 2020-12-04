@@ -45,10 +45,12 @@
 
   module.exports = IOServer = class IOServer {
     // Define the variables used by the server
-    constructor({verbose, host, port, cookie, mode, cors, middleware}) {
-      var e, i, m, ref, ref1, ref2;
+    constructor(options = {}) {
+      var cookie, cors, e, host, i, m, middleware, mode, port, ref, ref1, ref2, verbose;
       // Allow sending message from external app
       this.sendTo = this.sendTo.bind(this);
+      // Set default options
+      ({verbose, host, port, cookie, mode, cors, middleware} = options);
       this.host = host ? String(host) : HOST;
       try {
         this.port = port ? Number(port) : PORT;
@@ -78,7 +80,7 @@
       }
       
       // Setup CORS since necessary in socket.io v3
-      this.cors = cors && cors.prototype ? cors : {};
+      this.cors = (cors != null) && cors ? cors : {};
       if (!this.cors.methods) {
         this.cors.methods = ['GET', 'POST'];
       }
