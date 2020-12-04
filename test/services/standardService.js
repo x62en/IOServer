@@ -1,5 +1,7 @@
 (function() {
-  var StandardService;
+  var IOServerError, StandardService;
+
+  ({IOServerError} = require(`${__dirname}/../../build/ioserver`));
 
   module.exports = StandardService = class StandardService {
     constructor(app) {
@@ -29,6 +31,10 @@
 
     errored(socket, data) {
       throw 'I can not run';
+    }
+
+    errored_typed(socket, data) {
+      throw new IOServerError('Custom error message', 3);
     }
 
     _forbidden(socket, data) {
