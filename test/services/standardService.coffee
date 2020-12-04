@@ -1,3 +1,5 @@
+{IOServerError} = require "#{__dirname}/../../build/ioserver"
+
 module.exports = class StandardService
     constructor: (@app) ->
 
@@ -15,6 +17,9 @@ module.exports = class StandardService
     
     errored: (socket, data) ->
         throw 'I can not run'
+    
+    errored_typed: (socket, data) ->
+        throw new IOServerError('Custom error message', 3)
     
     _forbidden: (socket, data) ->
         console.error 'You should not be here !!'

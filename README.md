@@ -220,6 +220,12 @@ npm run build
 
 The NPM publishing is automated, just commit (or better merge) into master with comment 'Release v1.0.x' in order to publish corresponding package in NPM.
 
+### Bump version
+
+```sh
+npm --no-git-tag-version version [<newversion> | major | minor | patch]
+```
+
 ## TODO
 * write better doc
 * publish chat demo example

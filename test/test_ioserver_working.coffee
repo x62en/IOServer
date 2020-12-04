@@ -7,6 +7,7 @@ should          = chai.should()
 
 socketio_client = require 'socket.io-client'
 IOServer        = require "#{__dirname}/../build/ioserver"
+{IOServerError} = require "#{__dirname}/../build/ioserver"
 
 # Import Applications entities
 SessionManager    = require "#{__dirname}/managers/sessionManager"
@@ -108,9 +109,11 @@ describe "IOServer simple HTTP working tests", ->
     it 'Check public method error', (done) ->
         socket_client = socketio_client(end_point, opts)
         socket_client.on 'error', (data) ->
-            data.should.be.a 'string'
+            data.should.be.an 'object'
             
-            data.should.be.equal 'I can not run'
+            data.type.should.be.equal 'IOServerError'
+            data.message.should.be.equal 'I can not run'
+            data.code.should.be.equal -1
             
             socket_client.disconnect()
             done()
@@ -119,10 +122,21 @@ describe "IOServer simple HTTP working tests", ->
     it 'Check public method error sync', (done) ->
         socket_client = socketio_client(end_point, opts)
         socket_client.emit 'errored', null, (data) ->
-            data.should.be.an 'object'
-            data.should.have.deep.property 'error'
+            data.status.should.be.equal 'error'
+            data.type.should.be.equal 'IOServerError'
+            data.message.should.be.equal 'I can not run'
+            data.code.should.be.equal -1
             
-            data.error.should.be.equal 'I can not run'
+            socket_client.disconnect()
+            done()
+
+    it 'Check public method error sync with custom code', (done) ->
+        socket_client = socketio_client(end_point, opts)
+        socket_client.emit 'errored_typed', null, (data) ->
+            data.status.should.be.equal 'error'
+            data.type.should.be.equal 'IOServerError'
+            data.message.should.be.equal 'Custom error message'
+            data.code.should.be.equal 3
             
             socket_client.disconnect()
             done()
