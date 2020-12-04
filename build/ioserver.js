@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.1                        #
+  //         IOServer - v1.2.2                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -33,7 +33,7 @@
   closer = require('http-terminator');
 
   // Set global vars
-  VERSION = '1.2.1';
+  VERSION = '1.2.2';
 
   PORT = 8080;
 
