@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.3                        #
+  //         IOServer - v1.2.4                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -33,7 +33,7 @@
   closer = require('http-terminator');
 
   // Set global vars
-  VERSION = '1.2.3';
+  VERSION = '1.2.4';
 
   PORT = 8080;
 
@@ -296,14 +296,18 @@
     // On a specific event call the appropriate method of object
     _handleCallback({service, method, socket}) {
       return (data, callback) => {
-        var err, payload;
         this._logify(6, `[*] call method ${method} of service ${service}`);
-        try {
-          return new Promise(this.service_list[service][method](socket, data, callback)).catch((err) => {
-            throw err;
-          });
-        } catch (error) {
-          err = error;
+        return new Promise((resolve, reject) => {
+          var err;
+          try {
+            this.service_list[service][method](socket, data, callback);
+            return resolve();
+          } catch (error) {
+            err = error;
+            return reject(err);
+          }
+        }).catch((err) => {
+          var payload;
           if (typeof err === 'string') {
             err = new IOServerError(err, -1);
           }
@@ -319,7 +323,7 @@
           } else {
             return socket.emit('error', payload);
           }
-        }
+        });
       };
     }
 
