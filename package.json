@@ -1,6 +1,6 @@
 {
   "name": "ioserver",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Damn simple IOServer instance, allowing developpers to add services as simple coffeescript class.",
   "main": "build/ioserver.js",
   "files": [
@@ -12,14 +12,14 @@
   "dependencies": {
     "colors": "^1.4.0",
     "http-terminator": "^2.0.3",
-    "socket.io": "^3.0.1"
+    "socket.io": "^3.0.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "coffeescript": "^2.5.1",
     "mocha": "^8.2.1",
-    "snyk": "^1.426.0",
-    "socket.io-client": "^3.0.3"
+    "snyk": "^1.437.3",
+    "socket.io-client": "^3.0.4"
   },
   "scripts": {
     "dev": "$(npm bin)/coffee --no-header --map --watch --output build/ --compile src/",
