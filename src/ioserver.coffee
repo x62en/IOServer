@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.2.2                        #
+#         IOServer - v1.2.3                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -28,7 +28,7 @@ http   = require 'http'
 closer = require 'http-terminator'
 
 # Set global vars
-VERSION    = '1.2.2'
+VERSION    = '1.2.3'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
@@ -238,7 +238,7 @@ module.exports = class IOServer
         return (data, callback) =>
             @_logify 6, "[*] call method #{method} of service #{service}"
             try
-                @service_list[service][method] socket, data, callback
+                return new Promise(@service_list[service][method] socket, data, callback).catch( (err) => throw err )
             catch err
                 if typeof err is 'string'
                     err = new IOServerError(err, -1)
