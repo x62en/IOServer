@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.2                        #
+  //         IOServer - v1.2.3                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -33,7 +33,7 @@
   closer = require('http-terminator');
 
   // Set global vars
-  VERSION = '1.2.2';
+  VERSION = '1.2.3';
 
   PORT = 8080;
 
@@ -299,7 +299,9 @@
         var err, payload;
         this._logify(6, `[*] call method ${method} of service ${service}`);
         try {
-          return this.service_list[service][method](socket, data, callback);
+          return new Promise(this.service_list[service][method](socket, data, callback)).catch((err) => {
+            throw err;
+          });
         } catch (error) {
           err = error;
           if (typeof err === 'string') {
