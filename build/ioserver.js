@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.4                        #
+  //         IOServer - v1.2.5                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -97,7 +97,8 @@
       // Register the global app handle
       // that will be passed to all entities
       this.appHandle = {
-        send: this.sendTo
+        send: this.sendTo,
+        log: this._logify
       };
       this.server = null;
     }

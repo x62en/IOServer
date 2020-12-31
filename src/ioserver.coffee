@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.2.4                        #
+#         IOServer - v1.2.5                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -77,7 +77,10 @@ module.exports = class IOServer
         
         # Register the global app handle
         # that will be passed to all entities
-        @appHandle = { send: @sendTo }
+        @appHandle = {
+            send: @sendTo
+            log: @_logify
+        }
         @server = null
     
     _logify: (level, text) ->
