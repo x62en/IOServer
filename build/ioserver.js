@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.5                        #
+  //         IOServer - v1.2.6                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -98,7 +98,8 @@
       // that will be passed to all entities
       this.appHandle = {
         send: this.sendTo,
-        log: this._logify
+        log: this._logify,
+        verbose: this.verbose
       };
       this.server = null;
     }
