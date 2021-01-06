@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.2.5                        #
+#         IOServer - v1.2.6                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -80,6 +80,7 @@ module.exports = class IOServer
         @appHandle = {
             send: @sendTo
             log: @_logify
+            verbose: @verbose
         }
         @server = null
     

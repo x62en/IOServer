@@ -1,6 +1,6 @@
 {
   "name": "ioserver",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Damn simple IOServer instance, allowing developpers to add services as simple coffeescript class.",
   "main": "build/ioserver.js",
   "files": [
@@ -12,20 +12,20 @@
   "dependencies": {
     "colors": "^1.4.0",
     "http-terminator": "^2.0.3",
-    "socket.io": "^3.0.4"
+    "socket.io": "^3.0.5"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "coffeescript": "^2.5.1",
     "mocha": "^8.2.1",
     "snyk": "^1.437.3",
-    "socket.io-client": "^3.0.4"
+    "socket.io-client": "^3.0.5"
   },
   "scripts": {
     "dev": "$(npm bin)/coffee --no-header --map --watch --output build/ --compile src/",
     "build": "$(npm bin)/coffee --no-header --map --output build/ --compile src/",
     "test": "$(npm bin)/coffee --no-header -c ./test && mocha --exit",
-    "snyk-protect": "snyk protect",
+    "snyk-protect": "$(npm bin)/snyk protect",
     "prepublish": "npm run snyk-protect",
     "gpr-setup": "node scripts/gpr.js"
   },
