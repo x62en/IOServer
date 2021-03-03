@@ -1,6 +1,6 @@
 (function() {
   //###################################################
-  //         IOServer - v1.2.6                        #
+  //         IOServer - v1.2.7                        #
   //                                                  #
   //         Damn simple socket.io server             #
   //###################################################
@@ -33,7 +33,7 @@
   closer = require('http-terminator');
 
   // Set global vars
-  VERSION = '1.2.4';
+  VERSION = '1.2.7';
 
   PORT = 8080;
 
@@ -299,10 +299,10 @@
     _handleCallback({service, method, socket}) {
       return (data, callback) => {
         this._logify(6, `[*] call method ${method} of service ${service}`);
-        return new Promise((resolve, reject) => {
+        return new Promise(async(resolve, reject) => {
           var err;
           try {
-            this.service_list[service][method](socket, data, callback);
+            await this.service_list[service][method](socket, data, callback);
             return resolve();
           } catch (error) {
             err = error;

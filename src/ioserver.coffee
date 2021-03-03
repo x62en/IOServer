@@ -1,5 +1,5 @@
 ####################################################
-#         IOServer - v1.2.6                        #
+#         IOServer - v1.2.7                        #
 #                                                  #
 #         Damn simple socket.io server             #
 ####################################################
@@ -28,7 +28,7 @@ http   = require 'http'
 closer = require 'http-terminator'
 
 # Set global vars
-VERSION    = '1.2.4'
+VERSION    = '1.2.7'
 PORT       = 8080
 HOST       = 'localhost'
 LOG_LEVEL  = ['EMERGENCY','ALERT','CRITICAL','ERROR','WARNING','NOTIFICATION','INFORMATION','DEBUG']
@@ -243,7 +243,7 @@ module.exports = class IOServer
             @_logify 6, "[*] call method #{method} of service #{service}"
             return new Promise (resolve, reject) =>
                 try
-                    @service_list[service][method](socket, data, callback)
+                    await @service_list[service][method](socket, data, callback)
                     resolve()
                 catch err
                     reject(err)
